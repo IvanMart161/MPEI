@@ -1,4 +1,4 @@
-# Вспомогательные файлы компиляции
+# Вспомогательные файлы сборки LaTeX
 *.aux
 *.bbl
 *.bcf
@@ -10,4 +10,12 @@
 *.run.xml
 *.synctex.gz
 *.toc
-*.xdv
+*.lot
+*.lof
+*.nav
+*.snm
+*.vrb
+
+# Системные файлы
+.DS_Store
+Thumbs.db
