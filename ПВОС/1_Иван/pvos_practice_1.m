@@ -34,9 +34,12 @@ figure(1)
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
 
 
+% Spectrum INPUT
+[fin, sin_spec] = get_spectrum(in, fs, weighting);
+
 % Plot results
 figure(2)
-    plot(fin/1e6,mag2db(abs(sin)),'LineWidth',2)
+    plot(fin/1e6,mag2db(abs(sin_spec)),'LineWidth',2)
     grid on
     axis tight
     title('Spectrum of signal before ADC')
