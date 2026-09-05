@@ -1,0 +1,78 @@
+% --- Языковые пакеты и кодировка (pdflatex) ---
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+% --- Поля по ГОСТ 7.32 ---
+\usepackage[left=30mm, right=15mm, top=20mm, bottom=20mm]{geometry}
+
+% --- Межстрочный интервал и абзацы ---
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+
+% --- Математика ---
+\usepackage{amsmath, amsfonts, amssymb}
+
+% --- Таблицы и графика ---
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+
+% --- Подписи к рисункам и таблицам ---
+\usepackage{caption}
+\DeclareCaptionLabelSeparator{endash}{\space---\space}
+\captionsetup[figure]{labelsep=endash, justification=centering, font=small}
+\captionsetup[table]{labelsep=endash, justification=raggedright, singlelinecheck=false, font=small}
+
+% --- Заголовки разделов (14pt, выравнивание слева) ---
+\usepackage{titlesec}
+\titleformat{\section}{\raggedright\bfseries\normalsize}{\hspace{\parindent}\thesection}{0.5em}{}
+\titleformat{\subsection}{\raggedright\bfseries\normalsize}{\hspace{\parindent}\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt plus 2pt minus 2pt}{6pt plus 2pt minus 2pt}
+\titlespacing*{\subsection}{0pt}{10pt plus 2pt minus 2pt}{4pt plus 2pt minus 2pt}
+
+% --- Оглавление (точки и ссылки) ---
+\usepackage{tocloft}
+\renewcommand{\contentsname}{СОДЕРЖАНИЕ}
+\renewcommand{\cfttoctitlefont}{\hfill\bfseries\normalsize}
+\renewcommand{\cftaftertoctitle}{\hfill\null\smallskip}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\setlength{\cftbeforesecskip}{0.3em}
+
+% --- Подсветка кода (listings) ---
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.96}
+
+\lstdefinestyle{gostcode}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    captionpos=t,
+    numbers=left,
+    numbersep=5pt,
+    tabsize=4,
+    frame=single
+}
+\lstset{style=gostcode}
+
+% --- Ссылки ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,
+    urlcolor=blue,
+    citecolor=black
+}
