@@ -19,3 +19,8 @@
 # Системные файлы
 .DS_Store
 Thumbs.db
+
+# Qucs расчетные файлы и логи
+*.dat
+*.dpl
+*.log
