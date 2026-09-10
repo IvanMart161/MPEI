@@ -1,4 +1,3 @@
-% --- Языковые пакеты и кодировка (pdflatex) ---
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[russian]{babel}
@@ -17,8 +16,11 @@
 
 % --- Таблицы и графика ---
 \usepackage{graphicx}
+\graphicspath{{fig/}}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{float}
+\usepackage{multirow}
 
 % --- Подписи к рисункам и таблицам ---
 \usepackage{caption}
@@ -26,12 +28,25 @@
 \captionsetup[figure]{labelsep=endash, justification=centering, font=small}
 \captionsetup[table]{labelsep=endash, justification=raggedright, singlelinecheck=false, font=small}
 
-% --- Заголовки разделов (14pt, выравнивание слева) ---
+% --- Заголовки разделов по ГОСТ 7.32 ---
 \usepackage{titlesec}
-\titleformat{\section}{\raggedright\bfseries\normalsize}{\hspace{\parindent}\thesection}{0.5em}{}
-\titleformat{\subsection}{\raggedright\bfseries\normalsize}{\hspace{\parindent}\thesubsection}{0.5em}{}
-\titlespacing*{\section}{0pt}{12pt plus 2pt minus 2pt}{6pt plus 2pt minus 2pt}
-\titlespacing*{\subsection}{0pt}{10pt plus 2pt minus 2pt}{4pt plus 2pt minus 2pt}
+
+% Раздел первого уровня (14pt/large, красная строка)
+\titleformat{\section}[hang]
+    {\raggedright\bfseries\large}
+    {\hspace*{\parindent}\thesection}
+    {0.5em}
+    {}
+
+% Подраздел (14pt/normalsize, красная строка, без наползания второй строки на номер)
+\titleformat{\subsection}[hang]
+    {\raggedright\bfseries\normalsize}
+    {\hspace*{\parindent}\thesubsection}
+    {0.5em}
+    {}
+
+\titlespacing*{\section}{0pt}{14pt plus 2pt minus 2pt}{8pt plus 2pt minus 2pt}
+\titlespacing*{\subsection}{0pt}{10pt plus 2pt minus 2pt}{6pt plus 2pt minus 2pt}
 
 % --- Оглавление (точки и ссылки) ---
 \usepackage{tocloft}
@@ -63,7 +78,9 @@
     numbers=left,
     numbersep=5pt,
     tabsize=4,
-    frame=single
+    frame=single,
+    keepspaces=true,
+    extendedchars=true
 }
 \lstset{style=gostcode}
 
