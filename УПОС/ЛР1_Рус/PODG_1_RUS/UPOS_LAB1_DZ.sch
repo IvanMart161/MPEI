@@ -1,6 +1,6 @@
 <Qucs Schematic 25.2.0>
 <Properties>
-  <View=-40,-297,3662,1465,1.24854,1356,342>
+  <View=-67,-602,5851,2560,1.10044,1543,747>
   <Grid=10,10,1>
   <DataSet=UPOS_LAB1_DZ.dat>
   <DataDisplay=UPOS_LAB1_DZ.dpl>
@@ -40,8 +40,6 @@
   </Rect>
   <Rect 1690 587 345 167 3 #c0c0c0 1 00 0 8.27e+08 1e+06 8.33e+08 1 -0.0162635 0.1 0.2 1 -1 1 1 315 0 225 1 0 0 "f, Гц" "U, В" "">
 	<"ngspice/ac.v(vout3)" #ff0000 2 3 0 0 0>
-	  <Mkr 8.30066e+08 206 -213 3 1 0>
-	  <Mkr 8.30005e+08 -27 -197 3 1 0>
   </Rect>
 </Diagrams>
 <Paintings>
