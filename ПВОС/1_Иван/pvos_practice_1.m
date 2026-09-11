@@ -7,12 +7,11 @@ snr = 75; % signal to noise ratio, [dB]
 noise_power = 1; % power of noise
 signal_power = noise_power*db2pow(snr); % power of signal
 
-fs = 210e6; % sampling frequency before decimation, [Hz]
-fc = 180.6e6; % if mono = 0 fc = 312.6e6; 
-fg = 210.6e6; % center demodulation geterodin freq, [Hz]
-
-na = 14; % number of bits after analog to digital conversion
-ng = 14; % number of bits for digital geterodin
+fs = 180e6; % 100 + 8*10
+fc = 210.1e6; % 130 + 8*10 + 0.1 (отстройка)
+fg = 210e6; % 130 + 8*10
+na = 13; % 5 + 8
+ng = 13; % 5 + 8
 
 weighting = 1; % on or off weigth for spectrum
 
@@ -186,3 +185,20 @@ function [f,s] = get_spectrum(in,fs,weighting)
     end
 end
 
+%% Автоматическое сохранение графиков
+destdirectory_FIG = 'export_figs'; 
+if ~exist(destdirectory_FIG, 'dir')
+    mkdir(destdirectory_FIG);
+end
+
+prefix = '2'; 
+
+for figNum = 1:8
+    fig = figure(figNum);
+    set(fig, 'WindowState', 'maximized');
+    drawnow; 
+    
+    pdf_name = fullfile(destdirectory_FIG, sprintf('%s_%d.pdf', prefix, figNum));
+    print(fig, pdf_name, '-dpdf', '-bestfit');
+end
+disp('Графики успешно сохранены в формате PDF!');

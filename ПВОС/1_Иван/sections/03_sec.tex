@@ -1,16 +1,62 @@
 % !TeX root = ../main.tex
-\section{Результаты измерений}
-Данные моделирования сведены в таблицу~\ref{tab:results}.
+\subsection{Исследование влияния разрядности цифрового гетеродина}
 
-\begin{table}[h!]
-    \caption{Экспериментальные параметры схемы}
-    \label{tab:results}
+В данном пункте анализируется зависимость уровня побочных (паразитных) спектральных составляющих на выходе демодулятора от количества бит цифрового гетеродина $n_g$. Моделирование проводится в режиме фиксированной запятой (\texttt{nco\_type = 'fixed'}) для значений $n_g$ вплоть до $n_a + 2 = 15$ бит.
+
+% --- Блок 1: ng = 3 и ng = 6 ---
+\begin{figure}[H]
     \centering
-    \begin{tabular}{|c|c|c|c|}
-        \hline
-        \textbf{№ опыта} & \textbf{Напряжение $U$, В} & \textbf{Ток $I$, мА} & \textbf{Мощность $P$, мВт} \\ \hline
-        1 & 1.20 & 10.5 & 12.6 \\ \hline
-        2 & 2.50 & 22.1 & 55.25 \\ \hline
-        3 & 3.30 & 30.0 & 99.0 \\ \hline
-    \end{tabular}
-\end{table}
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng3.png}
+        \caption{Спектр на выходе DEM ($n_g = 3$)}
+        \label{fig:3_ng3}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng6.png}
+        \caption{Спектр на выходе DEM ($n_g = 6$)}
+        \label{fig:3_ng6}
+    \end{minipage}
+\end{figure}
+
+Как видно из рисунков \ref{fig:3_ng3} и \ref{fig:3_ng6}, при крайне малой разрядности гетеродина ($n_g = 3$ и $n_g = 6$ бит) ошибка квантования формируемых синусоидальных и косинусоидальных отсчетов весьма велика. Это приводит к нелинейным искажениям и появлению мощных побочных гармоник в спектре выходного сигнала. Данные паразитные составляющие существенно сокращают динамический диапазон устройства, свободный от искажений, и могут привести к ложному обнаружению сигналов.
+
+% --- Блок 2: ng = 10 и ng = 13 ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng10.png}
+        \caption{Спектр на выходе DEM ($n_g = 10$)}
+        \label{fig:3_ng10}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng13.png}
+        \caption{Спектр на выходе DEM ($n_g = 13$)}
+        \label{fig:3_ng13}
+    \end{minipage}
+\end{figure}
+
+С увеличением разрядности гетеродина до $n_g = 10$ и $n_g = 13$ бит (рисунки \ref{fig:3_ng10} и \ref{fig:3_ng13}) уровень шума квантования монотонно снижается. Паразитные спектральные пики становятся значительно слабее, так как форма синтезируемого опорного сигнала приближается к идеальной гармонике. 
+
+% --- Блок 3: ng = 15 ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng15.png}
+        \caption{Спектр на выходе DEM ($n_g = 15$)}
+        \label{fig:3_ng15}
+    \end{minipage}
+\end{figure}
+
+При достижении значения $n_g = 15$, что соответствует рекомендованному правилу $n_g = n_a + 2$ (рисунок \ref{fig:3_ng15}), мощность шумов квантования гетеродина становится пренебрежимо малой по сравнению с шумами квантования самого АЦП. Дальнейшее увеличение разрядности ЦГ нецелесообразно, так как общий динамический диапазон тракта будет ограничен характеристиками аналого-цифрового преобразователя.

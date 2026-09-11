@@ -1,9 +1,84 @@
 % !TeX root = ../main.tex
-\section{Теоретические сведения}
-Для расчета эквивалентного сопротивления используется формула:
-\begin{equation}
-    R_{eq} = \frac{R_1 \cdot R_2}{R_1 + R_2}
-\end{equation}
+ \section{Результаты моделирования}
 
-\subsection{Дополнительные сведения}
-Данные соотношения справедливы для линейных электрических цепей.
+\subsection{Базовое моделирование тракта цифровой демодуляции }
+
+В данном подразделе представлены результаты имитационного моделирования для базовых параметров устройства при заданном отношении сигнал/шум 75 дБ и начальном фазовом разбалансе квадратурных каналов в $2^\circ$.
+
+% --- Блок 1: Сигнал и спектр до АЦП ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_1.png}
+        \caption{Входной сигнал до АЦП}
+        \label{fig:2_1}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_2.png}
+        \caption{Спектр входного сигнала}
+        \label{fig:2_2}
+    \end{minipage}
+\end{figure}
+
+На рисунках \ref{fig:2_1} и \ref{fig:2_2} показан исходный аналоговый сигнал, представляющий собой аддитивную смесь монохроматического колебания с частотой $f_C = 210{,}1$~МГц и белого гауссова шума. В скрипте данная смесь формируется путем сложения полезного сигнала \texttt{signal} и шумовой компоненты \texttt{noise}, мощность которой определяется параметром \texttt{snr}. Спектр демонстрирует наличие выраженных спектральных пиков на несущей частоте и равномерный шумовой пьедестал.
+
+% --- Блок 2: Сигнал и спектр после АЦП ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_3.png}
+        \caption{Сигнал после АЦП}
+        \label{fig:2_3}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_4.png}
+        \caption{Спектр сигнала после АЦП}
+        \label{fig:2_4}
+    \end{minipage}
+\end{figure}
+
+% --- Блок 3: Сигнал и спектр цифрового гетеродина ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_5.png}
+        \caption{Сигнал на выходе ЦГ}
+        \label{fig:2_5}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_6.png}
+        \caption{Спектр сигнала ЦГ}
+        \label{fig:2_6}
+    \end{minipage}
+\end{figure}
+
+На рисунках \ref{fig:2_5} и \ref{fig:2_6} отображены квадратурные компоненты цифрового гетеродина, настроенного на частоту $f_G = 210$~МГц. Как и входной сигнал, опорное колебание алиасится к частоте $30$~МГц. В функции \texttt{get\_nco} задан фазовый разбаланс \texttt{pmv = 2} градуса. Из-за неидеальной ортогональности I и Q каналов подавление зеркальной спектральной составляющей оказывается неполным, что отчетливо видно в виде симметричного паразитного пика в спектре гетеродина.
+
+% --- Блок 4: Сигнал и спектр после демодулятора ---
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_7.png}
+        \caption{Квадратуры на выходе DEM}
+        \label{fig:2_7}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{2_8.png}
+        \caption{Спектр на выходе DEM}
+        \label{fig:2_8}
+    \end{minipage}
+\end{figure}
+
+Рисунки \ref{fig:2_7} и \ref{fig:2_8} демонстрируют результат работы цифрового демодулятора, реализованного в коде функцией \texttt{get\_dem} путем перемножения отсчетов сигнала с АЦП и комплексных отсчетов ЦГ. В результате гетеродинирования спектр сдвигается на нулевую частоту. Благодаря заложенной отстройке в $0{,}1$~МГц ($210{,}1 - 210{,}0$), во временной области наблюдается низкочастотное биение. В спектре доминирует пик на частоте $0{,}1$~МГц, однако из-за фазовых искажений ЦГ присутствуют зеркальные побочные спектральные составляющие, снижающие динамический диапазон приемника.

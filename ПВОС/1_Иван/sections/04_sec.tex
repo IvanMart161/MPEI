@@ -1,3 +1,46 @@
 % !TeX root = ../main.tex
-\section{Выводы}
-В ходе выполнения работы были исследованы характеристики схем. Расчетные данные полностью совпали с измерениями.
+\subsection{Влияние амплитудно-фазового разбаланса (Пункт 4)}
+
+В данном пункте исследуется влияние неидеальности формирования квадратурных составляющих гетеродина на спектр демодулированного сигнала. Моделирование проводится при фиксированной разрядности $n_g = 13$ бит (\texttt{nco\_type = 'single'}).
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{4_spec_a0_p0.png}
+        \caption{Идеальные квадратуры}
+        \label{fig:4_ideal}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{4_spec_a10_p0.png}
+        \caption{Амплитудный разбаланс (1 дБ)}
+        \label{fig:4_amv}
+    \end{minipage}
+\end{figure}
+
+На рисунке \ref{fig:4_ideal} показан спектр при идеальных квадратурах (амплитудный разбаланс 0 дБ, фазовый $0^\circ$), где зеркальная составляющая полностью подавлена. На рисунке \ref{fig:4_amv} введено амплитудное искажение в 1 дБ, что приводит к нарушению симметрии ортогональных каналов и появлению побочного спектрального пика.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{4_spec_a0_p5.png}
+        \caption{Фазовый разбаланс ($5^\circ$)}
+        \label{fig:4_pmv}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{4_spec_a15_p5.png}
+        \caption{Разбаланс (1{,}5 дБ, $5^\circ$)}
+        \label{fig:4_both}
+    \end{minipage}
+\end{figure}
+
+Рисунок \ref{fig:4_pmv} иллюстрирует влияние исключительно фазовой ошибки в $5^\circ$, что также генерирует зеркальную помеху. В случае комплексного воздействия (рисунок \ref{fig:4_both}), включающего амплитудное рассогласование 1{,}5 дБ и фазовое $5^\circ$, мощность мешающей компоненты $P_r$ достигает максимального значения в рамках проведенных тестов, что согласуется с теоретической математической моделью демодулятора.
