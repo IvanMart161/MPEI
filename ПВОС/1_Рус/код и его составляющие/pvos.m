@@ -7,12 +7,15 @@ snr = 75; % signal to noise ratio, [dB]
 noise_power = 1; % power of noise
 signal_power = noise_power*db2pow(snr); % power of signal
 
-fs = 180e6;   % 100 + 8*10
-fc = 210.1e6; % 130 + 8*10 + 0.1 (отстройка)
-fg = 210e6;   % 130 + 8*10
+N = 4;
 
-na = 13; % 5 + 8
-ng = 13; % 5 + 8
+fs = (100 + N * 10) * 1e6;       % Частота дискретизации АЦП (f_S) (sampling frequency before decimation, [Hz])
+fc = (130 + N * 10) * 1e6 + 0.1e6; % Промежуточная частота (f_C) + отстройка 0,1 МГц (if mono = 0 fc = 312.6e6)
+fg = (130 + N * 10) * 1e6;       % Центральная частота ЦГ (f_G) (center demodulation geterodin freq, [Hz])
+
+
+na = 5 + N; 
+ng = 5 + N; 
 
 weighting = 1; % on or off weigth for spectrum
 
@@ -48,7 +51,7 @@ figure(2)
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
     print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_2.png'));
-    xlim([0 0.005]);
+    
 
 %% АЦП (ADC)
 adc_signal = get_adc(in,na);
