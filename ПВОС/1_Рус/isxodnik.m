@@ -7,12 +7,12 @@ snr = 75; % signal to noise ratio, [dB]
 noise_power = 1; % power of noise
 signal_power = noise_power*db2pow(snr); % power of signal
 
-fs = 210e6; % sampling frequency before decimation, [Hz]
-fc = 180.6e6; % if mono = 0 fc = 312.6e6; 
-fg = 210.6e6; % center demodulation geterodin freq, [Hz]
+fs = 240e6; % sampling frequency before decimation, [Hz]
+fc = 312.6e6; % if mono = 0 fc = 312.6e6; 
+fg = 312.5e6; % center demodulation geterodin freq, [Hz]
 
 na = 14; % number of bits after analog to digital conversion
-ng = 14; % number of bits for digital geterodin
+ng = 8; % number of bits for digital geterodin
 
 weighting = 1; % on or off weigth for spectrum
 
@@ -24,7 +24,7 @@ in = signal + noise; % input generate
 
 %% INPUT
 % Plot results
-figure(1)
+figure
     plot(t*1e3,in,'LineWidth',2)
     grid on
     axis tight
@@ -33,9 +33,11 @@ figure(1)
     ylabel('LSB')
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
 
+% Spectrum
+[fin,sin] = get_spectrum(in,fs,weighting);
 
 % Plot results
-figure(2)
+figure
     plot(fin/1e6,mag2db(abs(sin)),'LineWidth',2)
     grid on
     axis tight
@@ -48,7 +50,7 @@ figure(2)
 adc_signal = get_adc(in,na);
 
 % Plot results
-figure(3)
+figure
     stairs(adc_signal,'LineWidth',2)
     grid on
     axis tight
@@ -61,7 +63,7 @@ figure(3)
 [fadc,sadc] = get_spectrum(adc_signal,fs,weighting);
 
 % Plot results
-figure(4)
+figure
     plot(fadc/1e6,mag2db(abs(sadc)),'LineWidth',2)
     grid on
     axis tight
@@ -73,11 +75,11 @@ figure(4)
 %% NCO
 nco_type = 'single';
 amv = 0; % amplitude mismatch IQ, dB
-pmv = 2; % phase mismatch IQ, deg
+pmv = 0; % phase mismatch IQ, deg
 [nco_signal,nco_gain] = get_nco(ng,fg,t,nco_type,amv,pmv);
 
 % Plot results
-figure(5)
+figure
     plot(real(nco_signal),'LineWidth',2)
     hold on
     plot(imag(nco_signal),'LineWidth',2)
@@ -92,7 +94,7 @@ figure(5)
 [fnco,snco] = get_spectrum(nco_signal,fs,weighting);
 
 % Plot results
-figure(6)
+figure
     plot(fnco/1e6,mag2db(abs(snco)),'LineWidth',2) 
     grid on
     axis tight
@@ -106,7 +108,7 @@ dem_type = 'single';
 dem_signal = get_dem(adc_signal,nco_signal,na,ng,dem_type);
 
 % Plot results
-figure(7)
+figure
     plot(real(dem_signal),'LineWidth',2)
     hold on
     plot(imag(dem_signal),'LineWidth',2)
@@ -121,7 +123,7 @@ figure(7)
 % Spectrum DEM
 [fdem,sdem] = get_spectrum(dem_signal,fs,weighting);
 
-figure(8)
+figure
     plot(fdem/1e6,mag2db(abs(sdem)),'LineWidth',2)
     grid on
     axis tight
@@ -182,4 +184,3 @@ function [f,s] = get_spectrum(in,fs,weighting)
         s = fftshift(fft(double(in)));
     end
 end
-
