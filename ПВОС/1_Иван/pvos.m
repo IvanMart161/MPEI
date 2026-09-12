@@ -48,7 +48,7 @@ figure(2)
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
     print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_2.png'));
-    xlim([0 0.005]);
+
 
 %% АЦП (ADC)
 adc_signal = get_adc(in,na);
