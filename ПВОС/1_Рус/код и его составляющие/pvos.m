@@ -137,7 +137,7 @@ disp('Моделирование и сохранение для Пункта 3..
 nco_type_3 = 'fixed';
 amv_3 = 0; 
 pmv_3 = 0; 
-test_ng = [3, 6, 10, 13, 15]; 
+test_ng = [2, 4, 6, 9, 11]; 
 
 for ng_val = test_ng
     [nco_sig_3, ~] = get_nco(ng_val, fg, t, nco_type_3, amv_3, pmv_3);
@@ -152,6 +152,7 @@ for ng_val = test_ng
     set(gca, 'Fontsize', 28, 'Fontname', 'Times New Roman');
     drawnow;
     print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('3_spec_ng%d.png', ng_val)));
+    pause
 end
 close(100);
 
@@ -183,6 +184,8 @@ for k = 1:size(cases, 1)
     set(gca, 'Fontsize', 28, 'Fontname', 'Times New Roman');
     drawnow;
     print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('4_spec_a%d_p%d.png', round(cur_amv*10), round(cur_pmv))));
+    pause
+    
 end
 close(200);
 

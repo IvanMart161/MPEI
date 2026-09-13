@@ -1,3 +1,51 @@
 % !TeX root = ../main.tex
-\section{Выводы}
-В ходе выполнения работы были исследованы характеристики схем. Расчетные данные полностью совпали с измерениями.
+\section{Изменение количества бит цифрового генератора}
+Проанализируем изменение параметра бит цифрового гетеродина $ n_{g} $, при условии что тип бит это с фиксированной запятой от 2 до 11 для моего варианта.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng2.png}
+        \caption{Спектр на выходе DEM ($n_g = 2$)}
+        \label{fig:3_ng2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng4.png}
+        \caption{Спектр на выходе DEM ($n_g = 4$)}
+        \label{fig:3_ng4}
+    \end{minipage}
+\end{figure}
+
+Анализируя графики представленные выше, можно заметить, что количество побочных гармоник снизилось. Это случилось из-за того что при большей разрядности цифрового гетеродина ошибки округления становятся более редкими, точность перемножения увеличивается, вследствие чего гармоник становится меньше. Проверим данную гипотезу при других разрядностях (6,9,11).
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng6.png}
+        \caption{Спектр на выходе DEM ($n_g = 6$)}
+        \label{fig:3_ng6}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{3_spec_ng9.png}
+        \caption{Спектр на выходе DEM ($n_g = 9$)}
+        \label{fig:3_ng9}
+    \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{3_spec_ng11.png}
+    \caption{Спектр на выходе DEM ($n_g = 11$)}
+\end{figure}
+
+Сравним результаты при 2 и 11 количества бит. Количество бит напрямую связывает количество паразитных составляющих, которые появляются после перемножения. Гипотеза об округлении верна.
