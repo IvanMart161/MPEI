@@ -38,7 +38,7 @@ figure(1)
     xlabel('t, ms'); ylabel('LSB')
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_1.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_1.png'));
     xlim([0 0.005]);
 
 [fin, sin_spec] = get_spectrum(in, fs, weighting);
@@ -50,7 +50,7 @@ figure(2)
     xlabel('f, MHz'); ylabel('dB')
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_2.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_2.png'));
     
 
 %% АЦП (ADC)
@@ -64,7 +64,7 @@ figure(3)
     xlim([0 100])
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_3.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_3.png'));
     
 [fadc,sadc] = get_spectrum(adc_signal,fs,weighting);
 
@@ -75,7 +75,7 @@ figure(4)
     xlabel('f, MHz'); ylabel('dB')
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_4.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_4.png'));
 
 %% Цифровой гетеродин (NCO)
 nco_type = 'single';
@@ -92,7 +92,7 @@ figure(5)
     xlim([0 100]);
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_5.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_5.png'));
 
 [fnco,snco] = get_spectrum(nco_signal,fs,weighting);
 
@@ -103,7 +103,7 @@ figure(6)
     xlabel('f, MHz'); ylabel('dB')
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_6.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_6.png'));
 
 %% Демодулятор (DEM)
 dem_type = 'single';
@@ -119,7 +119,7 @@ figure(7)
     set(gca,'Fontsize',28,'Fontname','Times New Roman')
     drawnow;
     xlim([0 4000]);
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_7.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_7.png'));
     
 [fdem,sdem] = get_spectrum(dem_signal,fs,weighting);
 
@@ -130,7 +130,7 @@ figure(8)
     xlabel('f, MHz'); ylabel('dB')    
     set(gca,'Fontsize',28,'Fontname','Times New Roman')  
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_8.png'));
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, '2_8.png'));
 
 %% Пункт 3: исследование битности NCO (nco_type = 'fixed')
 disp('Моделирование и сохранение для Пункта 3...');
@@ -151,8 +151,8 @@ for ng_val = test_ng
     xlabel('f, MHz'); ylabel('dB');
     set(gca, 'Fontsize', 28, 'Fontname', 'Times New Roman');
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('3_spec_ng%d.png', ng_val)));
-    pause
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('3_spec_ng%d.png', ng_val)));
+    %pause
 end
 close(100);
 
@@ -183,8 +183,8 @@ for k = 1:size(cases, 1)
     xlabel('f, MHz'); ylabel('dB');
     set(gca, 'Fontsize', 28, 'Fontname', 'Times New Roman');
     drawnow;
-    print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('4_spec_a%d_p%d.png', round(cur_amv*10), round(cur_pmv))));
-    pause
+    %print('-dpng', '-r300', fullfile(destdirectory_FIG, sprintf('4_spec_a%d_p%d.png', round(cur_amv*10), round(cur_pmv))));
+    %pause
     
 end
 close(200);
