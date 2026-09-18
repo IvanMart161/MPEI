@@ -1,0 +1,66 @@
+% !TeX root = ../main.tex
+\section{Определение позиции около малоэтажного здания}
+Выйдя из парка и спустившись дальше по улице Рословка нашли 2-х этажное здание магазина Гранат. Прождав 5 минут, с определением местоположения получили следующий результат.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254558.jpg}
+        \caption{Результат определения местоположения}
+     \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254559.jpg}
+        \caption{Оценка результата}
+    \end{minipage}
+\end{figure}
+
+Также пытались замерить разброс вероятного местоположения, но из-за быстрого изменения местоположения, которое перескакивало с точки на точку в этом круге, не удалось поймать тоже самое местоположение.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254560.jpg}
+        \caption{Результат определения местоположения}
+     \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254561.jpg}
+        \caption{Оценка результата}
+    \end{minipage}
+\end{figure}
+
+Как можно заметить,  разница между точками истинного положения и вычисленным сотавила около 13-14 метров, а радиус вероятной области составил около 26 метров. Хоть и оценка погрешности совпала с предыдущим экспериментом, но координаты этой точки постоянно переопределялись: это объясняется эффектом многолучевости: навигационный сигнал переотражается от здания, и приемник смартфона обрабатывает суперпозицию прямого и задержанного отраженного сигналов, что приводит к значительным флуктуациям вычисленных координат.
+Также пронаблюдаем колличесвто спутников, которые смог поймать приемник на момент фиксации результата.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{спутники 2.jpg}
+    \caption{Колличество спутников пойманных в момент фиксации}
+\end{figure}
+
+Как и в предыдущем опыте было обнаружено 11 спутников потенциально способствующих определению местоположения.
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254562.jpg}
+        \caption{Фотоотчет результата}
+     \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \vspace{0pt}
+        \centering
+        \includegraphics[width=\linewidth]{5274195380109254563.jpg}
+        \caption{Фотоотчет результата}
+    \end{minipage}
+\end{figure}
