@@ -1,0 +1,23 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+
+\input{preamble.tex}
+
+\begin{document}
+
+\twocolumn[{%
+  \begin{@twocolumnfalse}
+    \input{titlepage.tex}
+    \vspace{1.5em}
+  \end{@twocolumnfalse}
+}]
+
+\input{sections/intro.tex}
+\input{sections/sec1_arch.tex}
+\input{sections/sec2_verilator.tex}
+\input{sections/sec3_rtl.tex}
+\input{sections/sec4_results.tex}
+% \input{sections/conclusion.tex}
+
+\input{biblio.tex}
+
+\end{document}

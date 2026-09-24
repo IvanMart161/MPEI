@@ -1,0 +1,155 @@
+\section{Аппаратно-программная реализация и верификационный стенд}
+
+Предложенная архитектура совместного моделирования реализует строгое разделение вычислительных задач: ресурсоемкая потоковая цифровая обработка сигналов выполняется аппаратно в синтезируемом ядре на SystemVerilog, в то время как управление экспериментом, подача радиосигнала и статистический анализ откликов вынесены в программную C++ оболочку.
+
+Интерфейс верхнего уровня аппаратного блока \texttt{top\_acqu} спроектирован для сквозной потоковой обработки входных радиосигналов на промежуточной частоте. Назначение портов модуля строго соответствует структуре аппаратного тракта первичного поиска, включающего цифровой перенос спектра (DDC), децимацию, циклическую свертку на базе БПФ/ОБПФ и квадратичное детектирование огибающей:
+
+\begin{lstlisting}[language=Verilog, caption={Interface of top\_acqu module}, label={lst:top_acqu}]
+module top_acqu #(
+    parameter INPUT_DATA     = 8,
+    parameter PHASE_WIDTH    = 32,
+    parameter ACC_WIDTH      = 16,
+    parameter int FFT_SIZE   = 4096
+)(
+    input  logic                   clk,
+    input  logic                   rst,
+    input  logic                   adc_input,
+    input  logic [PHASE_WIDTH-1:0] phase_step,
+    input  logic                   start_capture,
+    input  logic signed [31:0]     doppler_step,
+    input  logic signed [23:0]     fft_gold_code_re,
+    input  logic signed [23:0]     fft_gold_code_im,
+    output logic [11:0]            read_addr,
+    output logic [36:0]            power_out,
+    output logic                   peak_ready,
+    output logic                   fft_ready,
+    output logic signed [27:0]     fft_out_re,
+    output logic signed [27:0]     fft_out_im,
+    output logic signed [17:0]     mix_out_re,
+    output logic signed [17:0]     mix_out_im,
+    output logic                   mix_out_valid
+);
+\end{lstlisting}
+
+Входной порт \texttt{adc\_input} принимает однобитный квантованный поток отсчетов с физического или эмулируемого радиочастотного тракта. Синхронизация работы всех конвейерных каскадов осуществляется глобальным тактовым сигналом \texttt{clk}, а сброс регистров в исходное состояние — синхронной линией \texttt{rst}. 
+
+Управление входным цифровым гетеродином DDC осуществляется через 32-разрядный регистр приращения фазы \texttt{phase\_step}. Он определяет частоту квадратурных опорных гармонических колебаний, формируемых блоком \texttt{nco\_loop} для переноса спектра радиосигнала с промежуточной частоты на нулевую частоту в каналы синфазной и квадратурной составляющих \texttt{i\_ch\_8b} и \texttt{q\_ch\_8b}. Сигнал \texttt{start\_capture} служит управляющим импульсом для узла входной буферизации \texttt{buffer\_loop}: по этому фронту начинается накопление выборки отсчетов после CIC-фильтра, выполняющего децимацию с коэффициентом $\text{DEC} = 10$ и расширение разрядности до 16 бит.
+
+Для компенсации частотного сдвига Доплера в схему включен дополнительный синтезатор \texttt{doppler\_nco}, шаг фазового аккумулятора которого задается 32-битной знаковой шиной \texttt{doppler\_step}. При заполнении входного фрейма буфера на 3800 физических отсчетов контроллер стриминга активирует последовательное чтение массива через 12-битный адресный счетчик \texttt{read\_addr}, дополняя выборку нулями до целевой размерности конвейерного БПФ $\text{FFT\_SIZE} = 4096$. Отсчеты с выхода буфера модулируются комплексным смесителем \texttt{complex\_mixer} на заданную доплеровскую частоту и поступают в конвейер прямого БПФ.
+
+Шины \texttt{fft\_gold\_code\_re} и \texttt{fft\_gold\_code\_im} разрядностью 24 бита предназначены для подачи предрассчитанного комплексного спектра опорной дальномерной псевдослучайной последовательности (кода Голда). В блоке перемножения спектров \texttt{spec\_mix\_inst} вычисленный 28-битный спектр входного радиосигнала перемножается с комплексно-сопряженным спектром опорного кода с последующим масштабированием и усечением до 18-битной сетки. Результат поступает на вход конвейерного ядра обратного преобразования \texttt{IFFT}. 
+
+Выходной тракт схемы завершается квадратичным детектором мощности \texttt{power\_detector}, рассчитывающим мгновенную энергию корреляционного отклика $I^2 + Q^2$ на основе вещественной и мнимой составляющих отклика обратного БПФ. Значение энергии формируется на 37-разрядной шине \texttt{power\_out}. Сопровождающий строб \texttt{peak\_ready} информирует внешнее управляющее окружение о валидности текущего отсчета квадрата огибающей на выходе устройства. Группа вспомогательных сигналов (\texttt{fft\_ready}, \texttt{fft\_out\_re/im}, \texttt{mix\_out\_re/im}, \texttt{mix\_out\_valid}) выведена на верхний уровень для обеспечения сквозной отладки промежуточных спектров и контроля переполнения внутренних сумматоров в симуляторе без внедрения зондов в глубь иерархии проекта.
+
+На этапе первичного поиска навигационного сигнала задачей решающего устройства является обнаружение корреляционного пика на фоне собственных шумов приемного тракта при жестко фиксированной вероятности ложной тревоги $P_{\text{fa}}$ (Constant False Alarm Rate, CFAR). 
+
+При отсутствии полезного сигнала (статистическая гипотеза $H_0$) квадратурные составляющие отклика на выходе блока обратного БПФ представляют собой некоррелированные центрированные гауссовские случайные величины с дисперсией $\sigma^2$:
+\begin{equation}
+I \sim \mathcal{N}(0, \sigma^2), \quad Q \sim \mathcal{N}(0, \sigma^2).
+\end{equation}
+Выходной сигнал квадратичного детектора $Z = I^2 + Q^2$ подчиняется экспоненциальному закону распределения (распределение хи-квадрат с двумя степенями свободы) с плотностью вероятности:
+\begin{equation}
+w(Z \mid H_0) = \frac{1}{2\sigma^2} \exp\left(-\frac{Z}{2\sigma^2}\right), \quad Z \ge 0.
+\end{equation}
+
+Согласно критерию Неймана--Пирсона, порог обнаружения $V_{\text{th}}$ выбирается из условия фиксации заданной вероятности ложной тревоги:
+\begin{equation}
+P_{\text{fa}} = \int_{V_{\text{th}}}^{\infty} w(Z \mid H_0) \, dZ = \exp\left(-\frac{V_{\text{th}}}{2\sigma^2}\right).
+\end{equation}
+Средняя мощность шума в отсчете квадратичного детектора составляет $\overline{P}_{\text{noise}} = \mathbb{E}[Z \mid H_0] = 2\sigma^2$. Логарифмируя выражение для $P_{\text{fa}}$, получаем аналитическое выражение для расчета динамического порога:
+\begin{equation}
+V_{\text{th}} = -\overline{P}_{\text{noise}} \ln(P_{\text{fa}}) = \alpha \cdot \overline{P}_{\text{noise}},
+\end{equation}
+где $\alpha = -\ln(P_{\text{fa}})$ выступает масштабным коэффициентом порога. Для типового значения вероятности ложной тревоги $P_{\text{fa}} = 10^{-5}$ коэффициент составляет $\alpha \approx 11{,}51$.
+
+В условиях априорной неопределенности уровня радиочастотных шумов математическое ожидание мощности $\overline{P}_{\text{noise}}$ оценивается непосредственно по выборке выходного вектора мощности размером $N = 4096$ ячеек задержки. Для предотвращения смещения оценки из выборки усреднения исключается ячейка с максимальной зарегистрированной энергией $Z_{\max}$:
+\begin{equation}
+\widehat{P}_{\text{noise}} = \frac{1}{N - 1} \left( \sum_{i=0}^{N-1} Z_i - Z_{\max} \right).
+\end{equation}
+
+В программной обвязке верификационного стенда данный алгоритм реализован в виде компактной функции, оперирующей 64-битными целочисленными откликами аппаратного детектора:
+
+\begin{lstlisting}[language=C++, caption={Software CFAR engine implementation}, label={lst:cfar_detector}]
+// Noise variance estimation excluding candidate peak cell
+for (size_t i = 0; i < power_frame.size(); ++i) {
+    if (power_frame[i] > max_power) {
+        max_power = power_frame[i];
+        max_index = static_cast<uint32_t>(i);
+    }
+    sum_power += power_frame[i];
+}
+double mean_noise = static_cast<double>(sum_power - max_power) 
+                    / (power_frame.size() - 1);
+
+// Dynamic Neyman-Pearson threshold evaluation
+double alpha = -std::log(p_fa);
+result.threshold = static_cast<uint64_t>(mean_noise * alpha);
+result.max_power = max_power;
+result.peak_index = max_index;
+result.snr_db = 10.0 * std::log10(static_cast<double>(max_power) / mean_noise);
+result.signal_found = (max_power >= result.threshold);
+\end{lstlisting}
+
+Значение отношения «сигнал/шум» (SNR) в децибелах рассчитывается как логарифм отношения энергии обнаруженного экстремума к оцененной локальной мощности шума. Вынесение алгоритма CFAR в хост-окружение C++ позволяет избежать громоздких схем расчета логарифмов и операций деления в целевом базисе ПЛИС на этапе предварительной оценки параметров обнаружения.
+
+Программный верификационный стенд на C++ осуществляет координацию работы скомпилированного класса \texttt{Vtop\_acqu}, воспроизведение входного радиосигнала и двумерное сканирование пространства параметров «задержка -- Доплер». Перед запуском цикла симуляции стенд выполняет прямое считывание бинарного файла реальной или моделированной смеси с дискретизатора тракта \texttt{gps\_if\_signal.bin}. Массив отсчетов размещается в непрерывном буфере оперативной памяти \texttt{std::vector<uint8\_t>}, что устраняет дисковые операции ввода-вывода в процессе модельного времени:
+
+\begin{lstlisting}[language=C++, caption={C++ verification testbench architecture}, label={lst:tb_coarse}]
+// Preloading raw IF ADC stream into memory
+std::ifstream in_file("bin/gps_if_signal.bin", std::ios::binary | std::ios::ate);
+std::streamsize file_size = in_file.tellg();
+in_file.seekg(0, std::ios::beg);
+std::vector<uint8_t> adc_data(file_size);
+in_file.read(reinterpret_cast<char*>(adc_data.data()), file_size);
+
+// Doppler frequency grid initialization (-5 kHz to +5 kHz, step 500 Hz)
+std::vector<int> dopplers;
+for (int d = -5000; d <= 5000; d += 500) dopplers.push_back(d);
+
+for (int doppler_hz : dopplers) {
+    // Hardware reset cycle
+    top->clk = 0; top->rst = 1; top->eval();
+    for (int i = 0; i < 10; ++i) { top->clk = !top->clk; top->eval(); }
+    top->rst = 0;
+
+    // Carrier and Doppler phase increment configuration
+    top->phase_step = 0x40000000;
+    top->doppler_step = calc_doppler_step(doppler_hz);
+    top->start_capture = 1;
+
+    int adc_idx = 0, points_collected = 0;
+    bool first_cycle = true;
+
+    // Frame processing run-loop
+    while (!Verilated::gotFinish() && points_collected < 4096) {
+        top->clk = 1;
+        top->eval();
+
+        if (top->peak_ready) {
+            power_2d.push_back(top->power_out);
+            points_collected++;
+        }
+
+        top->clk = 0;
+        if (first_cycle) { top->start_capture = 0; first_cycle = false; }
+        top->adc_input = (adc_idx < adc_data.size()) ? adc_data[adc_idx++] : 0;
+        top->eval();
+    }
+
+    // Extraction and post-processing of correlation surface slice
+    std::vector<uint64_t> frame(power_2d.end() - 4096, power_2d.end());
+    DetectionResult det = apply_neyman_pearson(frame, 1e-5);
+    if (det.signal_found && det.max_power > best_power) {
+        best_power = det.max_power;
+        best_doppler = doppler_hz;
+        best_shift = det.peak_index;
+        best_snr = det.snr_db;
+    }
+}
+\end{lstlisting}
+
+Стенд итерирует сетку возможных доплеровских сдвигов частоты несущей в диапазоне от $-5000$ до $+5000$~Гц с дискретностью 500~Гц, что формирует 21 частотный бин. Функция \texttt{calc\_doppler\_step()} пересчитывает физическую частоту в целочисленный 32-битный шаг приращения фазы NCO в соответствии с выражением $\Delta\theta = \mathrm{round}(f_d \cdot 2^{32} / F_s)$. Перед каждым прогоном частотного среза подается строб синхронного сброса длительностью 10 полупериодов тактового сигнала для очистки конвейерных стадий фильтрации и преобразования Фурье.
+
+Внутри рабочего цикла эмулируются фронт и спад тактового сигнала вызовом метода \texttt{top->eval()}. По отрицательному фронту тактовой частоты на вход схемы подается очередной однобитный отсчет \texttt{adc\_input} из предварительно загруженного вектора. По положительному фронту проверяется строб готовности выходного детектора \texttt{peak\_ready}. При его фиксации 37-разрядное значение энергии \texttt{power\_out} сохраняется в буфер двумерной корреляционной матрицы \texttt{power\_2d}. 
+
+По завершении сбора кадра из 4096 точек мощности текущий частотный срез срезается в локальный массив и передается функции \texttt{apply\_neyman\_pearson()}. Глобальные переменные отслеживают максимальный отклик среди всех 21 каналов поиска, сохраняя оптимальные оценки времени прихода (кодовой задержки $\tau$), доплеровского сдвига $f_d$ и отношения «сигнал/шум» в децибелах. По окончании сканирования двумерный массив энергии и промежуточные комплексные спектры сериализуются на диск через двоичный поток \texttt{std::ofstream} для последующей визуализации и кросс-валидации.
