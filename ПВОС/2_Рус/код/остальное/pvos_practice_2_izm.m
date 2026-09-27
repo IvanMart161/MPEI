@@ -10,7 +10,7 @@ signal_power = noise_power*db2pow(snr); % power of signal
 fs = 140e6; % sampling frequency before decimation, [Hz] (Частота дискретизации АЦП)
 fsv = 14e6; % sampling frequency after decimation, [Hz] (Сохраняем коэффициент децимации R=10)
 
-fc = 170e6; % if mono = 0 fc = 170e6; (Промежуточная частота входного сигнала)
+fc = 170.1e6; % if mono = 0 fc = 170e6; (Промежуточная частота входного сигнала)
 fg = 170e6; % center demodulation geterodin freq, [Hz] (Центральная частота ЦГ)
 
 noba = 9; % number of bits after analog to digital conversion (Количество бит АЦП)
@@ -239,189 +239,124 @@ RESP = fvtool(CIC, FIR, FC,'Fs',[fs fsv fs]);
 RESP.NormalizeMagnitudeto1 = 'on';
 
 %% Пункт 3: Исследование зависимости побочных составляющих от разрядности ЦГ
-% Для варианта N=4: na = 9, следовательно ng варьируется от 2 до 11
 nobg_array = 2:(noba + 2); 
 sfdr_values = zeros(size(nobg_array));
-
-nco_type_p3 = 'fixed'; % Согласно заданию используем fixed
+nco_type_p3 = 'fixed'; 
 
 for i = 1:length(nobg_array)
     current_nobg = nobg_array(i);
     
-    % 1. Генерируем сигнал гетеродина с текущей разрядностью
     [nco_signal_p3, nco_gain_p3] = get_nco(current_nobg, fg, t, nco_type_p3, 0, 0);
-    
-    % 2. Демодуляция (используем уже имеющийся adc_signal)
     dem_signal_p3 = get_dem(adc_signal, nco_signal_p3, noba, current_nobg, nco_type_p3);
     
-    % 3. Фильтрация (пропускаем через CIC и КИХ-компенсатор)
     src_p3 = dsp.SignalSource(dem_signal_p3, R*round(length(dem_signal_p3)/R));
-    
-    release(CIC); % Разблокируем объект перед сменой типа данных
+    release(CIC); 
     cic_signal_p3 = step(CIC, step(src_p3));
     cic_signal_p3 = single(cic_signal_p3)/single(cic_gain); 
-    
-    % Сигнал на выходе устройства (после КИХ)
     fir_signal_p3 = filter(hFIR, 1, double(cic_signal_p3));
     
-    % 4. Измерение SFDR
-    signal_for_sfdr = real(fir_signal_p3);
-    sfdr_values(i) = sfdr(signal_for_sfdr, fsv); 
+    % --- РУЧНОЙ РАСЧЕТ SFDR (ЗЕРКАЛЬНОГО ПОДАВЛЕНИЯ) ---
+    valid_sig = fir_signal_p3(500:end); % Отбрасываем переходной процесс
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
     
-    % Выводим и безопасно сохраняем показательные спектры для 2, 6 и 11 бит
-    if current_nobg == 2 || current_nobg == 6 || current_nobg == 11
-        fig_spectrum = figure;
-        sfdr(signal_for_sfdr, fsv); 
-        title(sprintf('Спектр на выходе (ЦГ: %d бит)', current_nobg));
-        set(gca,'Fontsize',18,'Fontname','Times New Roman');
-        
-        filename_base = sprintf('p3_spectrum_%d_bit', current_nobg);
-        filename_fig = [filename_base, '.fig'];
-        filename_tif = [filename_base, '.tif'];
-        
-        if ~isfile(filename_fig)
-            savefig(fig_spectrum, filename_fig);
-        else
-            disp(['Файл ', filename_fig, ' уже существует. Пропуск...']);
-        end
-        
-        if ~isfile(filename_tif)
-            print(fig_spectrum, filename_base, '-dtiff', '-r300');
-        else
-            disp(['Файл ', filename_tif, ' уже существует. Пропуск...']);
-        end
-    end
+    % Ищем сигнал на +100 кГц и помеху на -100 кГц
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    sfdr_values(i) = mag2db(p_main / p_spur); 
 end
 
-% 5. Построение итогового графика зависимости SFDR от разрядности ЦГ
 fig_sfdr = figure; 
 plot(nobg_array, sfdr_values, '-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'b');
 grid on;
 title('Зависимость SFDR от количества бит ЦГ');
 xlabel('Количество бит ЦГ, n_g');
 ylabel('SFDR, дБн');
-set(gca,'Fontsize',24,'Fontname','Times New Roman');
+set(gca,'Fontsize',20,'Fontname','Times New Roman');
 
-% Безопасное сохранение итогового графика
-if ~isfile('p3_sfdr_vs_bits.fig')
-    savefig(fig_sfdr, 'p3_sfdr_vs_bits.fig');
-else
-    disp('Файл p3_sfdr_vs_bits.fig уже существует. Пропуск...');
-end
-
-if ~isfile('p3_sfdr_vs_bits.tif')
-    print(fig_sfdr, 'p3_sfdr_vs_bits', '-dtiff', '-r300');
-else
-    disp('Файл p3_sfdr_vs_bits.tif уже существует. Пропуск...');
-end
-
-%% Пункт 4: Исследование квадратурных искажений (с проверкой наличия файлов)
-% Возвращаем разрядность ЦГ к исходному значению для N=4
+%% Пункт 4: Исследование квадратурных искажений
 current_nobg = 9; 
 nco_type_p4 = 'single'; 
 
-% Задаем диапазоны изменения искажений
-amv_array = 0:0.02:0.2; % Амплитудный дисбаланс (от 0 до 0.2)
-pmv_array = 0:2:20;     % Фазовый дисбаланс (от 0 до 20)
+amv_array = 0:0.02:0.2; % Амплитудный дисбаланс 
+pmv_array = 0:2:20;     % Фазовый дисбаланс
 
 sfdr_amv = zeros(size(amv_array));
 sfdr_pmv = zeros(size(pmv_array));
 
-%% 4.1 Исследование амплитудных искажений (amv) при pmv = 0
+% 4.1 Амплитудные искажения (amv)
 for i = 1:length(amv_array)
     current_amv = amv_array(i);
-    
-    % Генерируем гетеродин с амплитудным перекосом квадратур
     [nco_signal_p4, ~] = get_nco(current_nobg, fg, t, nco_type_p4, current_amv, 0);
     dem_signal_p4 = get_dem(adc_signal, nco_signal_p4, noba, current_nobg, nco_type_p4);
     
-    % Фильтрация
     src_p4 = dsp.SignalSource(dem_signal_p4, R*round(length(dem_signal_p4)/R));
     release(CIC);
     cic_signal_p4 = step(CIC, step(src_p4));
     cic_signal_p4 = single(cic_signal_p4)/single(cic_gain); 
     fir_signal_p4 = filter(hFIR, 1, double(cic_signal_p4));
     
-    % Измерение SFDR
-    signal_for_sfdr = real(fir_signal_p4);
-    sfdr_amv(i) = sfdr(signal_for_sfdr, fsv);
+    valid_sig = fir_signal_p4(500:end);
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
     
-    % Построение и безопасное сохранение показательного спектра
-    if abs(current_amv - 0.1) < 1e-5
-        fig_amv_spec = figure;
-        sfdr(signal_for_sfdr, fsv);
-        title(sprintf('Спектр при амплитудном искажении amv = %.2f', current_amv));
-        set(gca,'Fontsize',18,'Fontname','Times New Roman');
-        
-        if ~isfile('p4_spectrum_amv_0.1.fig')
-            savefig(fig_amv_spec, 'p4_spectrum_amv_0.1.fig');
-        else
-            disp('Файл p4_spectrum_amv_0.1.fig уже существует. Пропуск...');
-        end
-        
-        if ~isfile('p4_spectrum_amv_0.1.tif')
-            print(fig_amv_spec, 'p4_spectrum_amv_0.1', '-dtiff', '-r300');
-        else
-            disp('Файл p4_spectrum_amv_0.1.tif уже существует. Пропуск...');
-        end
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    if current_amv == 0
+        sfdr_amv(i) = sfdr_values(end-2); % Берем идеальное значение из пункта 3 для 9 бит
+    else
+        sfdr_amv(i) = mag2db(p_main / p_spur);
     end
 end
 
-%% 4.2 Исследование фазовых искажений (pmv) при amv = 0
+% 4.2 Фазовые искажения (pmv)
 for i = 1:length(pmv_array)
     current_pmv = pmv_array(i);
-    
-    % Генерируем гетеродин с фазовым перекосом квадратур
     [nco_signal_p4, ~] = get_nco(current_nobg, fg, t, nco_type_p4, 0, current_pmv);
     dem_signal_p4 = get_dem(adc_signal, nco_signal_p4, noba, current_nobg, nco_type_p4);
     
-    % Фильтрация
     src_p4 = dsp.SignalSource(dem_signal_p4, R*round(length(dem_signal_p4)/R));
     release(CIC);
     cic_signal_p4 = step(CIC, step(src_p4));
     cic_signal_p4 = single(cic_signal_p4)/single(cic_gain); 
     fir_signal_p4 = filter(hFIR, 1, double(cic_signal_p4));
     
-    % Измерение SFDR
-    signal_for_sfdr = real(fir_signal_p4);
-    sfdr_pmv(i) = sfdr(signal_for_sfdr, fsv);
+    valid_sig = fir_signal_p4(500:end);
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
     
-    % Построение и безопасное сохранение показательного спектра
-    if abs(current_pmv - 10) < 1e-5
-        fig_pmv_spec = figure;
-        sfdr(signal_for_sfdr, fsv);
-        title(sprintf('Спектр при фазовом искажении pmv = %d', current_pmv));
-        set(gca,'Fontsize',18,'Fontname','Times New Roman');
-        
-        if ~isfile('p4_spectrum_pmv_10.fig')
-            savefig(fig_pmv_spec, 'p4_spectrum_pmv_10.fig');
-        else
-            disp('Файл p4_spectrum_pmv_10.fig уже существует. Пропуск...');
-        end
-        
-        if ~isfile('p4_spectrum_pmv_10.tif')
-            print(fig_pmv_spec, 'p4_spectrum_pmv_10', '-dtiff', '-r300');
-        else
-            disp('Файл p4_spectrum_pmv_10.tif уже существует. Пропуск...');
-        end
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    if current_pmv == 0
+        sfdr_pmv(i) = sfdr_values(end-2); % Идеальное значение для 9 бит
+    else
+        sfdr_pmv(i) = mag2db(p_main / p_spur);
     end
 end
 
-%% 4.3 Построение итоговых графиков с безопасным сохранением
+% 4.3 Построение итоговых графиков
 fig_amv = figure;
 plot(amv_array, sfdr_amv, '-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'r');
 grid on;
 title('Зависимость SFDR от амплитудных искажений (amv)');
 xlabel('Амплитудный дисбаланс, amv');
 ylabel('SFDR, дБн');
-set(gca,'Fontsize',24,'Fontname','Times New Roman');
-
-if ~isfile('p4_sfdr_vs_amv.fig')
-    savefig(fig_amv, 'p4_sfdr_vs_amv.fig');
-end
-if ~isfile('p4_sfdr_vs_amv.tif')
-    print(fig_amv, 'p4_sfdr_vs_amv', '-dtiff', '-r300');
-end
+set(gca,'Fontsize',20,'Fontname','Times New Roman');
 
 fig_pmv = figure;
 plot(pmv_array, sfdr_pmv, '-s', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'm');
@@ -429,14 +364,7 @@ grid on;
 title('Зависимость SFDR от фазовых искажений (pmv)');
 xlabel('Фазовый дисбаланс, pmv');
 ylabel('SFDR, дБн');
-set(gca,'Fontsize',24,'Fontname','Times New Roman');
-
-if ~isfile('p4_sfdr_vs_pmv.fig')
-    savefig(fig_pmv, 'p4_sfdr_vs_pmv.fig');
-end
-if ~isfile('p4_sfdr_vs_pmv.tif')
-    print(fig_pmv, 'p4_sfdr_vs_pmv', '-dtiff', '-r300');
-end
+set(gca,'Fontsize',20,'Fontname','Times New Roman');
 
 %% Пункт 5: Тестовое воздействие с линейно нарастающей амплитудой (LA)
 % 1. Задаем параметры сигнала

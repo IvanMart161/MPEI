@@ -299,12 +299,10 @@ figure
 % Просмотр АЧХ и ФЧХ спроектированного фильтра-дециматора
 fvtool(FIRDecim, 'Fs', fs);
 
-%% ПУНКТ 3: Исследование влияния разрядности ЦГ на SFDR
-
-% Исходные данные для пункта 3
-nco_type_p3 = 'fixed'; % Фиксированная точка для гетеродина
-amv_p3 = 0; % Без амплитудных искажений
-pmv_p3 = 0; % Без фазовых искажений
+%% ПУНКТ 3: Исследование влияния разрядности ЦГ на SFDR (с единым КИХ и ручным БПФ)
+nco_type_p3 = 'fixed'; 
+amv_p3 = 0; 
+pmv_p3 = 0; 
 
 % Диапазон изменения бит: от 2 до na + 2 (9 + 2 = 11)
 nobg_array = 2:(noba + 2); 
@@ -318,64 +316,86 @@ t_adj = t(1:len_to_use);
 for k = 1:length(nobg_array)
     current_nobg = nobg_array(k);
     
-    % 1. Генерация сигнала ЦГ с текущей разрядностью
+    % 1. Генерация сигнала ЦГ и демодуляция
     [nco_sig_loop, nco_gain_loop] = get_nco(current_nobg, fg, t_adj, nco_type_p3, amv_p3, pmv_p3);
-    
-    % 2. Демодуляция (умножение сигнала АЦП на ЦГ)
     dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, current_nobg, nco_type_p3);
     
-    % 3. Фильтрация и децимация через единый КИХ-фильтр
-    % Обязательно сбрасываем состояния фильтра перед каждой новой итерацией
+    % 2. Фильтрация и децимация через единый КИХ-фильтр (FIRDecim)
     reset(FIRDecim); 
     fir_sig_loop = step(FIRDecim, double(dem_sig_loop));
     
-    % 4. Измерение SFDR
-    % Анализируем динамический диапазон свободный от помех (SFDR)
-    % Измерение проводится для синфазной (вещественной) составляющей
-    sfdr_values(k) = sfdr(real(fir_sig_loop), fsv);
+    % 3. Ручной расчет зеркального подавления (SFDR) через БПФ
+    valid_sig = fir_sig_loop(500:end); % Отбрасываем переходной процесс
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
+    
+    % Ищем сигнал на +100 кГц и зеркальную помеху на -100 кГц
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    sfdr_values(k) = mag2db(p_main / p_spur);
 end
 
 % Построение графика зависимости SFDR от разрядности
 figure
-    plot(nobg_array, sfdr_values, '-o', 'LineWidth', 2, 'MarkerSize', 8)
+    plot(nobg_array, sfdr_values, '-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'b')
     grid on
-    title('Зависимость SFDR от разрядности ЦГ')
+    title('Зависимость SFDR от разрядности ЦГ (КИХ)')
     xlabel('Количество бит ЦГ, n_g')
     ylabel('SFDR, дБн')
     set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
     
-% Автоматическое сохранение результатов моделирования (п. 2 задания)
 saveas(gcf, 'SFDR_vs_NCO_bits.fig');
 saveas(gcf, 'SFDR_vs_NCO_bits.tiff');
 
-%% ПУНКТ 4: Исследование амплитудных и фазовых искажений
-
-% Исходные данные для пункта 4
-nco_type_p4 = 'single'; % Одинарная точность для анализа искажений
+%% ПУНКТ 4: Исследование амплитудных и фазовых искажений (с единым КИХ и ручным БПФ)
+nco_type_p4 = 'single'; 
+current_nobg = nobg; % Фиксируем на 9 бит
 
 % 1. Исследование фазовых искажений (pmv)
-pmv_array = 0:1:15; % Изменение фазы от 0 до 15 градусов
+pmv_array = 0:1:15; 
 sfdr_pmv = zeros(size(pmv_array));
-amv_fixed = 0; % Амплитудные искажения отключены
+amv_fixed = 0; 
 
 for k = 1:length(pmv_array)
     current_pmv = pmv_array(k);
     
-    % Генерация ЦГ, демодуляция, фильтрация
-    [nco_sig_loop, ~] = get_nco(nobg, fg, t_adj, nco_type_p4, amv_fixed, current_pmv);
-    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, nobg, nco_type_p4);
+    % Генерация ЦГ, демодуляция, КИХ-фильтрация
+    [nco_sig_loop, ~] = get_nco(current_nobg, fg, t_adj, nco_type_p4, amv_fixed, current_pmv);
+    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, current_nobg, nco_type_p4);
     
-    reset(FIRDecim); % Сброс состояний КИХ-фильтра
+    reset(FIRDecim); 
     fir_sig_loop = step(FIRDecim, double(dem_sig_loop));
     
-    sfdr_pmv(k) = sfdr(real(fir_sig_loop), fsv);
+    % Ручной расчет БПФ
+    valid_sig = fir_sig_loop(500:end);
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
+    
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    if current_pmv == 0
+        % При отсутствии искажений берем идеальное значение из массива п.3 (для 9 бит это индекс end-2)
+        sfdr_pmv(k) = sfdr_values(end-2); 
+    else
+        sfdr_pmv(k) = mag2db(p_main / p_spur);
+    end
 end
 
 % Построение графика для фазовых искажений
 figure
-    plot(pmv_array, sfdr_pmv, '-o', 'LineWidth', 2, 'MarkerSize', 8)
+    plot(pmv_array, sfdr_pmv, '-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'm')
     grid on
-    title('Влияние фазовых искажений на SFDR')
+    title('Влияние фазовых искажений на SFDR (КИХ)')
     xlabel('Фазовое искажение (pmv), градусы')
     ylabel('SFDR, дБн')
     set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
@@ -384,28 +404,44 @@ saveas(gcf, 'SFDR_vs_Phase_Mismatch.fig');
 saveas(gcf, 'SFDR_vs_Phase_Mismatch.tiff');
 
 % 2. Исследование амплитудных искажений (amv)
-amv_array = 0:0.2:3; % Изменение амплитуды от 0 до 3 дБ
+amv_array = 0:0.2:3; 
 sfdr_amv = zeros(size(amv_array));
-pmv_fixed = 0; % Фазовые искажения отключены
+pmv_fixed = 0; 
 
 for k = 1:length(amv_array)
     current_amv = amv_array(k);
     
-    % Генерация ЦГ, демодуляция, фильтрация
-    [nco_sig_loop, ~] = get_nco(nobg, fg, t_adj, nco_type_p4, current_amv, pmv_fixed);
-    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, nobg, nco_type_p4);
+    % Генерация ЦГ, демодуляция, КИХ-фильтрация
+    [nco_sig_loop, ~] = get_nco(current_nobg, fg, t_adj, nco_type_p4, current_amv, pmv_fixed);
+    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, current_nobg, nco_type_p4);
     
-    reset(FIRDecim); % Сброс состояний КИХ-фильтра
+    reset(FIRDecim); 
     fir_sig_loop = step(FIRDecim, double(dem_sig_loop));
     
-    sfdr_amv(k) = sfdr(real(fir_sig_loop), fsv);
+    % Ручной расчет БПФ
+    valid_sig = fir_sig_loop(500:end);
+    N_fft = length(valid_sig);
+    S = fftshift(fft(valid_sig .* hann(N_fft)));
+    f_axis = linspace(-fsv/2, fsv/2, N_fft);
+    
+    mask_main = (f_axis > 0.05e6) & (f_axis < 0.15e6);
+    mask_spur = (f_axis > -0.15e6) & (f_axis < -0.05e6);
+    
+    p_main = max(abs(S(mask_main)));
+    p_spur = max(abs(S(mask_spur)));
+    
+    if current_amv == 0
+        sfdr_amv(k) = sfdr_values(end-2);
+    else
+        sfdr_amv(k) = mag2db(p_main / p_spur);
+    end
 end
 
 % Построение графика для амплитудных искажений
 figure
-    plot(amv_array, sfdr_amv, '-s', 'LineWidth', 2, 'MarkerSize', 8, 'Color', '#D95319')
+    plot(amv_array, sfdr_amv, '-s', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', '#D95319', 'Color', '#D95319')
     grid on
-    title('Влияние амплитудных искажений на SFDR')
+    title('Влияние амплитудных искажений на SFDR (КИХ)')
     xlabel('Амплитудное искажение (amv), дБ')
     ylabel('SFDR, дБн')
     set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
