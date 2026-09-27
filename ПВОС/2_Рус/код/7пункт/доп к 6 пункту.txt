@@ -1,0 +1,63 @@
+%% ДОПОЛНЕНИЕ К ПУНКТУ 6 (Чистый видеосигнал, плоский спектр и точные подписи)
+
+% 1. Берем чистый ЛЧМ-сигнал (без шума), чтобы четко видеть зоны нулевой задержки
+in_lfm_vid = in_lfm_clean;
+
+% 2. Нормируем входной радиосигнал для графика (диапазон [-1, 1])
+in_lfm_vid_norm = in_lfm_vid / max(abs(in_lfm_vid));
+
+% 3. Пропускаем чистый сигнал через АЦП и перемножаем с гетеродином (демодуляция)
+adc_vid = get_adc(in_lfm_vid, noba);
+dem_vid = get_dem(adc_vid, nco_sig_lfm, noba, nobg, 'single');
+
+% Нормируем I и Q каналы полученного видеосигнала
+dem_vid_real = real(dem_vid) / max(abs(real(dem_vid)));
+dem_vid_imag = imag(dem_vid) / max(abs(imag(dem_vid)));
+
+% --- График 1: Временная диаграмма ЛЧМ на ПЧ (без шума) ---
+figure;
+plot(in_lfm_vid_norm, 'LineWidth', 1, 'Color', '#D95319')
+grid on; axis tight;
+title('Signal LFM on IF')
+xlabel('Samples')
+ylabel('LSB')
+ylim([-1.2 1.2])
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(gcf, 'P6_Add_Signal_LFM_on_IF.tiff');
+
+% --- График 2: Спектр ЛЧМ на ПЧ (без окна Ханна) ---
+% Передаем 0 вместо 1, чтобы получить настоящие "рога" ЛЧМ спектра
+[fin_vid, sin_vid] = get_spectrum(in_lfm_vid_norm, fs, 0);
+figure;
+plot(fin_vid/1e6, mag2db(abs(sin_vid)), 'LineWidth', 1.5, 'Color', '#0072BD')
+grid on; axis tight;
+title('Spectrum LFM on IF')
+xlabel('f, MHz')
+ylabel('|A|')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(gcf, 'P6_Add_Spectrum_LFM_on_IF.tiff');
+
+% --- График 3: Временная диаграмма видеосигнала (квадратуры) ---
+figure;
+plot(dem_vid_real, 'LineWidth', 1, 'Color', '#0072BD') % Синий (I-канал)
+hold on;
+plot(dem_vid_imag, 'LineWidth', 1, 'Color', '#D95319') % Оранжевый (Q-канал)
+grid on; axis tight;
+title('Signal LFM video')
+xlabel('Samples')
+ylabel('LSB')
+ylim([-1.2 1.2])
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(gcf, 'P6_Add_Signal_LFM_video.tiff');
+
+% --- График 4: Спектр видеосигнала (до децимации) ---
+% Передаем 0 для плоского спектра и используем частоту fs для полного обзора
+[fvid_out, svid_out] = get_spectrum(dem_vid, fs, 0);
+figure;
+plot(fvid_out/1e6, mag2db(abs(svid_out)), 'LineWidth', 1.5, 'Color', '#0072BD')
+grid on; axis tight;
+title('Spectrum LFM video')
+xlabel('f, MHz')
+ylabel('|A|')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(gcf, 'P6_Add_Spectrum_LFM_video.tiff');

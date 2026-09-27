@@ -1,0 +1,225 @@
+%% ПУНКТ 4: Исследование амплитудных и фазовых искажений
+
+% Исходные данные для пункта 4
+nco_type_p4 = 'single'; % Одинарная точность для анализа искажений
+
+% 1. Исследование фазовых искажений (pmv)
+pmv_array = 0:1:15; % Изменение фазы от 0 до 15 градусов
+sfdr_pmv = zeros(size(pmv_array));
+amv_fixed = 0; % Амплитудные искажения отключены
+
+for k = 1:length(pmv_array)
+    current_pmv = pmv_array(k);
+    
+    % Генерация ЦГ, демодуляция, фильтрация
+    [nco_sig_loop, ~] = get_nco(nobg, fg, t_adj, nco_type_p4, amv_fixed, current_pmv);
+    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, nobg, nco_type_p4);
+    
+    reset(FIRDecim); % Сброс состояний КИХ-фильтра
+    fir_sig_loop = step(FIRDecim, double(dem_sig_loop));
+    
+    sfdr_pmv(k) = sfdr(real(fir_sig_loop), fsv);
+end
+
+% Построение графика для фазовых искажений
+figure
+    plot(pmv_array, sfdr_pmv, '-o', 'LineWidth', 2, 'MarkerSize', 8)
+    grid on
+    title('Влияние фазовых искажений на SFDR')
+    xlabel('Фазовое искажение (pmv), градусы')
+    ylabel('SFDR, дБн')
+    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+    
+saveas(gcf, 'SFDR_vs_Phase_Mismatch.fig');
+saveas(gcf, 'SFDR_vs_Phase_Mismatch.tiff');
+
+% 2. Исследование амплитудных искажений (amv)
+amv_array = 0:0.2:3; % Изменение амплитуды от 0 до 3 дБ
+sfdr_amv = zeros(size(amv_array));
+pmv_fixed = 0; % Фазовые искажения отключены
+
+for k = 1:length(amv_array)
+    current_amv = amv_array(k);
+    
+    % Генерация ЦГ, демодуляция, фильтрация
+    [nco_sig_loop, ~] = get_nco(nobg, fg, t_adj, nco_type_p4, current_amv, pmv_fixed);
+    dem_sig_loop = get_dem(adc_signal_adj, nco_sig_loop, noba, nobg, nco_type_p4);
+    
+    reset(FIRDecim); % Сброс состояний КИХ-фильтра
+    fir_sig_loop = step(FIRDecim, double(dem_sig_loop));
+    
+    sfdr_amv(k) = sfdr(real(fir_sig_loop), fsv);
+end
+
+% Построение графика для амплитудных искажений
+figure
+    plot(amv_array, sfdr_amv, '-s', 'LineWidth', 2, 'MarkerSize', 8, 'Color', '#D95319')
+    grid on
+    title('Влияние амплитудных искажений на SFDR')
+    xlabel('Амплитудное искажение (amv), дБ')
+    ylabel('SFDR, дБн')
+    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+    
+saveas(gcf, 'SFDR_vs_Amplitude_Mismatch.fig');
+saveas(gcf, 'SFDR_vs_Amplitude_Mismatch.tiff');
+
+%% ПУНКТ 5: Монохроматический сигнал с линейно возрастающей амплитудой (LA)
+
+% 1. Настройки частоты и динамического диапазона
+fc_la = fg + 1e6; % Смещение на 1 МГц для попадания в рабочую полосу
+max_amp = 2^(noba - 1) - 1; % Макс. амплитуда для АЦП (при 9 битах = 255)
+
+% 2. Формирование линейно возрастающей огибающей
+A_la = linspace(0, max_amp, length_test).'; 
+
+% 3. Генерация входного тестового сигнала (чистый сигнал без шума)
+in_la = A_la .* builtin('sin', 2*pi*fc_la*t).';
+
+% 4. Прохождение тракта: АЦП -> ЦГ -> Демодулятор
+adc_signal_la = get_adc(in_la, noba);
+[nco_sig_la, ~] = get_nco(nobg, fg, t, 'single', 0, 0);
+dem_sig_la = get_dem(adc_signal_la, nco_sig_la, noba, nobg, 'single');
+
+% 5. Фильтрация и децимация (используем ранее созданный КИХ-фильтр)
+len_to_use_la = R * floor(length(dem_sig_la)/R);
+dem_sig_la_adj = dem_sig_la(1:len_to_use_la);
+
+reset(FIRDecim); % Очистка памяти фильтра
+fir_sig_la = step(FIRDecim, double(dem_sig_la_adj));
+
+% --- ВИЗУАЛИЗАЦИЯ И СОХРАНЕНИЕ РЕЗУЛЬТАТОВ ---
+
+% График 1: Временная диаграмма входного сигнала (Signal LA on IF)
+fig1 = figure;
+plot(in_la, 'LineWidth', 1)
+grid on; axis tight;
+title('Signal LA on IF')
+xlabel('Samples')
+ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig1, 'P5_Signal_LA_on_IF.fig');
+saveas(fig1, 'P5_Signal_LA_on_IF.tiff');
+
+% График 2: Спектр входного сигнала (Spectrum LA on IF)
+[fin_la, sin_la] = get_spectrum(in_la, fs, 1);
+fig2 = figure;
+plot(fin_la/1e6, mag2db(abs(sin_la)), 'LineWidth', 1)
+grid on; axis tight;
+title('Spectrum LA on IF')
+xlabel('f, MHz')
+ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig2, 'P5_Spectrum_LA_on_IF.fig');
+saveas(fig2, 'P5_Spectrum_LA_on_IF.tiff');
+
+% График 3: Временная диаграмма на выходе КИХ (Signal LA on IF = 0)
+fig3 = figure;
+plot(real(fir_sig_la), 'LineWidth', 1.5)
+hold on
+plot(imag(fir_sig_la), 'LineWidth', 1.5)
+grid on; axis tight;
+title('Signal LA on IF = 0')
+xlabel('Samples')
+ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig3, 'P5_Signal_LA_out.fig');
+saveas(fig3, 'P5_Signal_LA_out.tiff');
+
+% График 4: Спектр на выходе КИХ (Spectrum LA on IF = 0)
+[ffir_la, sfir_la] = get_spectrum(fir_sig_la, fsv, 1);
+fig4 = figure;
+plot(ffir_la/1e6, mag2db(abs(sfir_la)), 'LineWidth', 1)
+grid on; axis tight;
+title('Spectrum LA on IF = 0')
+xlabel('f, MHz')
+ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig4, 'P5_Spectrum_LA_out.fig');
+saveas(fig4, 'P5_Spectrum_LA_out.tiff');
+
+%% ПУНКТ 6: Симметричный ЛЧМ сигнал
+
+% 1. Расчет параметров ЛЧМ сигнала согласно Таблице 2
+B_lfm = 512; % База сигнала
+tau_lfm = B_lfm / bandwidth; % Длительность импульса
+prf_lfm = fs / length_test; % Частота повторения импульсов (соответствует длине теста)
+
+% 2. Создание объекта генератора ЛЧМ сигнала
+lfm_waveform = phased.LinearFMWaveform( ...
+    'SampleRate', fs, ...
+    'PulseWidth', tau_lfm, ...
+    'PRF', prf_lfm, ...
+    'SweepBandwidth', bandwidth, ...
+    'SweepDirection', 'Up', ... % Дает симметричный спектр от -B/2 до +B/2
+    'OutputFormat', 'Samples', ...
+    'NumSamples', length_test);
+
+% 3. Генерация видеосигнала (комплексная огибающая) и перенос на ПЧ
+lfm_baseband = step(lfm_waveform); % Генерация отсчетов
+max_amp_lfm = 2^(noba - 1) - 1; % Адаптация под динамический диапазон АЦП
+
+% Перенос на частоту гетеродина (формируем вещественный радиосигнал)
+% Используем t.', так как lfm_baseband это вектор-столбец
+in_lfm = max_amp_lfm * real(lfm_baseband .* exp(1i * 2 * pi * fg * t.'));
+
+% 4. Прохождение тракта: АЦП -> ЦГ -> Демодулятор
+adc_signal_lfm = get_adc(in_lfm, noba);
+[nco_sig_lfm, ~] = get_nco(nobg, fg, t, 'single', 0, 0);
+dem_sig_lfm = get_dem(adc_signal_lfm, nco_sig_lfm, noba, nobg, 'single');
+
+% 5. Фильтрация и децимация (КИХ-фильтр)
+len_to_use_lfm = R * floor(length(dem_sig_lfm)/R);
+dem_sig_lfm_adj = dem_sig_lfm(1:len_to_use_lfm);
+
+reset(FIRDecim); % Сброс состояний фильтра
+fir_sig_lfm = step(FIRDecim, double(dem_sig_lfm_adj));
+
+% --- ВИЗУАЛИЗАЦИЯ И СОХРАНЕНИЕ РЕЗУЛЬТАТОВ (П.6) ---
+
+% График 1: Временная диаграмма ЛЧМ на ПЧ
+fig5 = figure;
+plot(in_lfm, 'LineWidth', 1)
+grid on; axis tight;
+title('Signal LFM on IF')
+xlabel('Samples')
+ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig5, 'P6_Signal_LFM_on_IF.fig');
+saveas(fig5, 'P6_Signal_LFM_on_IF.tiff');
+
+% График 2: Спектр ЛЧМ на ПЧ
+[fin_lfm, sin_lfm] = get_spectrum(in_lfm, fs, 1);
+fig6 = figure;
+plot(fin_lfm/1e6, mag2db(abs(sin_lfm)), 'LineWidth', 1.5)
+grid on; axis tight;
+title('Spectrum LFM on IF')
+xlabel('f, MHz')
+ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig6, 'P6_Spectrum_LFM_on_IF.fig');
+saveas(fig6, 'P6_Spectrum_LFM_on_IF.tiff');
+
+% График 3: Временная диаграмма ЛЧМ после демодуляции (на видеочастоте)
+fig7 = figure;
+plot(real(fir_sig_lfm), 'LineWidth', 1)
+hold on
+plot(imag(fir_sig_lfm), 'LineWidth', 1)
+grid on; axis tight;
+title('Signal LFM video (IF = 0)')
+xlabel('Samples')
+ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig7, 'P6_Signal_LFM_video.fig');
+saveas(fig7, 'P6_Signal_LFM_video.tiff');
+
+% График 4: Спектр ЛЧМ на видеочастоте (после КИХ-дециматора)
+[ffir_lfm, sfir_lfm] = get_spectrum(fir_sig_lfm, fsv, 1);
+fig8 = figure;
+plot(ffir_lfm/1e6, mag2db(abs(sfir_lfm)), 'LineWidth', 1.5)
+grid on; axis tight;
+title('Spectrum LFM video')
+xlabel('f, MHz')
+ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+saveas(fig8, 'P6_Spectrum_LFM_video.fig');
+saveas(fig8, 'P6_Spectrum_LFM_video.tiff');
