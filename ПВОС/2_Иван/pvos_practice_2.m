@@ -1,24 +1,21 @@
 clear all; close all; clc;
-
 length_test = 24e3;
-
 destdirectory_FIG = 'export_figs'; 
 if ~exist(destdirectory_FIG, 'dir')
     mkdir(destdirectory_FIG);
 end
 
 %% Параметры устройства (Вариант 8)
-% N = 8
-fs = (100 + 8*10) * 1e6;       % 180 МГц[cite: 12]
-fc = (130 + 8*10) * 1e6 + 0.1e6; % 210.1 МГц (с отстройкой 0.1 МГц, чтобы сигнал не лег в 0)[cite: 12]
-fg = (130 + 8*10) * 1e6;       % 210.0 МГц[cite: 12]
-noba = 5 + 8;                  % 13 бит[cite: 12]
-nobg = 5 + 8;                  % 13 бит[cite: 12]
+fs = (100 + 8*10) * 1e6;         % 180 МГц
+fc = (130 + 8*10) * 1e6 + 0.1e6; % 210.1 МГц
+fg = (130 + 8*10) * 1e6;         % 210.0 МГц
+noba = 5 + 8;                    % 13 бит
+nobg = 5 + 8;                    % 13 бит
 nobo = 13;
 
-R = 10;                        % Коэффициент децимации
-fsv = fs / R;                  % 18 МГц
-bandwidth = fsv/2/1.2;         % Рабочая полоса
+R = 10;                          % Коэффициент децимации
+fsv = fs / R;                    % 18 МГц
+bandwidth = fsv/2/1.2;           % Рабочая полоса
 
 snr = 70; 
 noise_power = 1; 
@@ -31,71 +28,100 @@ signal = sqrt(signal_power)*sin(2*pi*fc*t).';
 in = signal + noise;
 
 %% Входной сигнал и спектр
+zoom_pts = 150; 
 figure
-    plot(t*1e3, in, 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal before ADC'); xlabel('t, ms'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(t*1e3, in, 'LineWidth', 1.5)
+grid on; axis tight;
+xlim([0, t(zoom_pts)*1e3]);
+title('Signal before ADC'); xlabel('t, ms'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 [fin, sin_spec] = get_spectrum(in, fs, 1);
 figure
-    plot(fin/1e6, mag2db(abs(sin_spec)), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Spectrum of signal before ADC'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(fin/1e6, mag2db(abs(sin_spec)), 'LineWidth', 1.2)
+grid on; axis tight; ylim([-20 150]);
+title('Spectrum of signal before ADC'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 %% АЦП
 adc_signal = get_adc(in, noba);
-
 figure
-    stairs(adc_signal, 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal after ADC'); xlabel('t, samples'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+stairs(adc_signal, 'LineWidth', 1.5)
+grid on; axis tight;
+xlim([0, zoom_pts]);
+title('Signal after ADC'); xlabel('t, samples'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
     
 [fadc, sadc] = get_spectrum(adc_signal, fs, 1);
 figure
-    plot(fadc/1e6, mag2db(abs(sadc)), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Spectrum of signal after ADC'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(fadc/1e6, mag2db(abs(sadc)), 'LineWidth', 1.2)
+grid on; axis tight; ylim([-20 150]);
+title('Spectrum of signal after ADC'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
-%% Гетеродин (NCO) и Демодулятор
+%% Гетеродин (NCO)
 nco_type = 'single';
 amv = 0;
 pmv = 0;
 [nco_signal, nco_gain] = get_nco(nobg, fg, t, nco_type, amv, pmv);
 
 figure
-    plot(real(nco_signal), 'LineWidth', 2)
-    hold on; plot(imag(nco_signal), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal after NCO'); xlabel('t, samples'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(real(nco_signal), 'LineWidth', 1.5)
+hold on; plot(imag(nco_signal), 'LineWidth', 1.5)
+grid on; axis tight;
+xlim([0, zoom_pts]);
+title('Signal after NCO'); xlabel('t, samples'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
+%% Спектр гетеродина (NCO)
 [fnco, snco] = get_spectrum(nco_signal, fs, 1);
+snco_db = mag2db(abs(snco));
 figure
-    plot(fnco/1e6, mag2db(abs(snco)), 'LineWidth', 2) 
-    grid on; axis tight;
-    title('Spectrum of signal after NCO'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
-
+plot(fnco/1e6, snco_db, 'LineWidth', 1.2) 
+grid on; axis tight; ylim([-200 120]);
+title('Spectrum of signal after NCO'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
+hold on;
+plot(-30.0, max(snco_db), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+text(-30.0, max(snco_db) + 20, 'f_{G,alias} = -30.0 MHz', ...
+    'FontName', 'Times New Roman', 'FontSize', 28, ...
+    'HorizontalAlignment', 'center', 'Color', 'r', 'FontWeight', 'bold');
+%% Демодулятор (Смеситель)
 dem_signal = get_dem(adc_signal, nco_signal, noba, nobg, 'single');
 
 figure
-    plot(real(dem_signal), 'LineWidth', 2)
-    hold on; plot(imag(dem_signal), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal after DEM'); xlabel('t, samples'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(real(dem_signal), 'LineWidth', 1.5)
+hold on; plot(imag(dem_signal), 'LineWidth', 1.5)
+grid on; axis tight;
+xlim([0, zoom_pts]);
+title('Signal after DEM'); xlabel('t, samples'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 [fdem, sdem] = get_spectrum(dem_signal, fs, 1);
+sdem_db = mag2db(abs(sdem));
 figure
-    plot(fdem/1e6, mag2db(abs(sdem)), 'LineWidth', 2) 
-    grid on; axis tight;
-    title('Spectrum of signal after DEM'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(fdem/1e6, sdem_db, 'LineWidth', 1.2) 
+grid on; axis tight; 
+xlim([-90 90]);
+ylim([-20 200]); % Подняли потолок, чтобы 2 строки 28 кегля встали идеально
+title('Spectrum of signal after DEM'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
+[~, idx_if]  = min(abs(fdem/1e6 - 0.1));
+[~, idx_sum] = min(abs(fdem/1e6 - (-60.1)));
+hold on;
+
+% Метка +0.1 МГц в 2 строки
+plot(fdem(idx_if)/1e6, sdem_db(idx_if), 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+text(fdem(idx_if)/1e6, sdem_db(idx_if) + 22, {'f_{IF} =', '+0.1 MHz'}, ...
+    'FontName', 'Times New Roman', 'FontSize', 28, ...
+    'HorizontalAlignment', 'center', 'Color', 'r', 'FontWeight', 'bold');
+
+% Метка -60.1 МГц в 2 строки
+plot(fdem(idx_sum)/1e6, sdem_db(idx_sum), 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+text(fdem(idx_sum)/1e6, sdem_db(idx_sum) + 22, {'f_{sum} =', '-60.1 MHz'}, ...
+    'FontName', 'Times New Roman', 'FontSize', 28, ...
+    'HorizontalAlignment', 'center', 'Color', 'r', 'FontWeight', 'bold');
 %% CIC фильтр
 N = 8;
 CIC = dsp.CICDecimator(R, 1, N);
@@ -107,18 +133,19 @@ cic_signal = step(CIC, step(dem_src));
 cic_signal = single(cic_signal) / single(cic_gain); 
 
 figure
-    plot(real(cic_signal), 'LineWidth', 2)
-    hold on; plot(imag(cic_signal), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal after CIC'); xlabel('t, samples'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(real(cic_signal), 'LineWidth', 2)
+hold on; plot(imag(cic_signal), 'LineWidth', 2)
+grid on; axis tight;
+xlim([0 450]); 
+title('Signal after CIC'); xlabel('t, samples'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 [fcic, scic] = get_spectrum(cic_signal, fsv, 1);
 figure
-    plot(fcic/1e6, mag2db(abs(scic)), 'LineWidth', 2) 
-    grid on; axis tight;
-    title('Spectrum of signal after CIC'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(fcic/1e6, mag2db(abs(scic)), 'LineWidth', 1.5) 
+grid on; axis tight;
+title('Spectrum of signal after CIC'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 %% КИХ-компенсатор (FIR)
 fPass = bandwidth/2;
@@ -140,58 +167,44 @@ hFIR = hFIR ./ max(hFIR);
 fir_signal = filter(hFIR, 1, double(cic_signal));
 
 figure
-    plot(real(fir_signal), 'LineWidth', 2)
-    hold on; plot(imag(fir_signal), 'LineWidth', 2)
-    grid on; axis tight;
-    title('Signal after FIR'); xlabel('t, samples'); ylabel('LSB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')
+plot(real(fir_signal), 'LineWidth', 2)
+hold on; plot(imag(fir_signal), 'LineWidth', 2)
+grid on; axis tight;
+xlim([100 550]); 
+title('Signal after FIR'); xlabel('t, samples'); ylabel('LSB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
 [ffir, sfir] = get_spectrum(fir_signal, fsv, 1);
 figure
-    plot(ffir/1e6, mag2db(abs(sfir)), 'LineWidth', 2) 
-    grid on; axis tight;
-    title('Spectrum of signal after FIR'); xlabel('f, MHz'); ylabel('dB')
-    set(gca, 'Fontsize', 20, 'Fontname', 'Times New Roman')    
+plot(ffir/1e6, mag2db(abs(sfir)), 'LineWidth', 1.5) 
+grid on; axis tight;
+title('Spectrum of signal after FIR'); xlabel('f, MHz'); ylabel('dB')
+set(gca, 'Fontsize', 16, 'Fontname', 'Times New Roman')
 
-% АЧХ каскада
-FC = dsp.FilterCascade(CIC, FIR);                                                  
-RESP = fvtool(CIC, FIR, FC, 'Fs', [fs fsv fs]);
-RESP.NormalizeMagnitudeto1 = 'on';
-щ                                                                                                                 й
-%% Пункт 3: Зависимость SFDR от количества бит ЦГ (nco_type = 'fixed')
-% Построение итогового графика зависимости на чистом белом фоне
-h_fig = figure('Color', 'w');
-ax = axes('Parent', h_fig);
+%% Автоматический экспорт всех графиков (Пункт 2)
+disp('Перекраска и сохранение графиков...');
+figs = findobj('Type', 'figure'); 
+for i = 1:length(figs)
+    fig = figs(i);
+    set(fig, 'Color', 'w');
+    
+    axs = findobj(fig, 'Type', 'axes');
+    for j = 1:length(axs)
+        ax = axs(j);
+        set(ax, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', ...
+            'GridColor', [0.5 0.5 0.5], 'GridAlpha', 0.5);
+        
+        t_label = get(ax, 'Title');  set(t_label, 'Color', 'k');
+        x_label = get(ax, 'XLabel'); set(x_label, 'Color', 'k');
+        y_label = get(ax, 'YLabel'); set(y_label, 'Color', 'k');
+    end
+    
+    filename = fullfile(destdirectory_FIG, sprintf('p2_fig_%02d.png', fig.Number));
+    print(fig, '-dpng', '-r300', filename);
+end
+disp('Все 12 графиков успешно сохранены в export_figs!');
 
-plot(ax, test_ng, sfdr_vals, '-ob', 'LineWidth', 2.5, ...
-    'MarkerFaceColor', 'b', 'MarkerSize', 8);
-grid(ax, 'on');
-
-% Принудительное назначение цветов осей, сетки и фона
-set(ax, 'Color', 'w', ...
-        'XColor', 'k', ...
-        'YColor', 'k', ...
-        'GridColor', [0.7 0.7 0.7], ...
-        'GridAlpha', 0.6, ...
-        'FontSize', 18, ...
-        'FontName', 'Times New Roman');
-
-title(ax, 'Зависимость SFDR от количества бит ЦГ', ...
-    'FontSize', 22, 'FontName', 'Times New Roman', 'Color', 'k', 'FontWeight', 'bold');
-xlabel(ax, 'Количество бит ЦГ, n_g', ...
-    'FontSize', 20, 'FontName', 'Times New Roman', 'Color', 'k');
-ylabel(ax, 'SFDR, дБн', ...
-    'FontSize', 20, 'FontName', 'Times New Roman', 'Color', 'k');
-
-xlim(ax, [min(test_ng) max(test_ng)]);
-ylim(ax, [25 95]);
-
-% Сохранение графиков
-print(h_fig, '-dpng', '-r300', fullfile(destdirectory_FIG, 'p3_sfdr_vs_bits.png'));
-print(h_fig, '-dtiff', '-r300', fullfile(fullfile(destdirectory_FIG, 'pic_tiff'), 'p3_sfdr_vs_bits.tiff'));
-savefig(h_fig, fullfile(fullfile(destdirectory_FIG, 'pic_fig'), 'p3_sfdr_vs_bits.fig'));
-
-%% Функции
+%% Функции (строго в конце файла)
 function out = get_adc(in, bits)
     out = quantize(int32(in), 1, bits, 0, 'Floor', 'Saturate');
 end
@@ -223,7 +236,7 @@ function dem_signal = get_dem(adc_signal, nco_signal, noba, nobg, dem_type)
             dem_signal = sfi(dem_signal, noba + nobg, 0);
         case 'double'
             dem_signal = double(adc_signal).*double(nco_signal);
-            dem_signal = sfi(dem_signal, noba + nobg, 0);  
+            dem_signal = sfi(dem_signal, noba + nobg, 0);
     end
 end
 
