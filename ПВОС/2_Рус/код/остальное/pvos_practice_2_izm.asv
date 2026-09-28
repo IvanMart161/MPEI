@@ -1,36 +1,4 @@
-clear all; close all; clc;
 
-length_test = 24e3;
-
-%% Some properties
-snr = 70; % signal to noise ratio, [dB]
-
-fs = 140e6; % sampling frequency before decimation, [Hz]
-fsv = 14e6; % sampling frequency after decimation, [Hz] 
-
-fc = 170.1e6; % Промежуточная частота входного сигнала с отстройкой 100 кГц
-fg = 170e6; % center demodulation geterodin freq, [Hz] 
-
-noba = 9; % number of bits after analog to digital conversion 
-nobg = 9; % number of bits for digital geterodin
-nobo = 14; % number of bits for output
-
-bandwidth = fsv/2/1.2; % maximum bandwith of signal, [Hz]
-
-% --- ИСПРАВЛЕНИЕ АМПЛИТУДЫ ДЛЯ 9-БИТНОГО АЦП ---
-max_adc_val = 2^(noba - 1) - 1; % Максимальное значение для 9 бит = 255
-target_amplitude = max_adc_val * 0.95; % 95% от шкалы (~242), чтобы избежать клиппинга
-
-signal_power = target_amplitude^2; % Мощность (амплитуда в квадрате)
-noise_power = signal_power / db2pow(snr); % Пересчет мощности шума под SNR = 70
-
-%% Some code here
-t = (0:length_test - 1)/fs; % time vector, s
-noise = sqrt(noise_power)*(normrnd(0,1,[length_test 1])); % noise generate
-
-signal = sqrt(signal_power)*sin(2*pi*fc*t).'; % Амплитуда теперь 242, а не 3162!
-
-in = signal + noise; % input generate
 %% Some code here
 t = (0:length_test - 1)/fs; % time vector, s
 noise = sqrt(noise_power)*(normrnd(0,1,[length_test 1])); % noise generate
@@ -281,19 +249,6 @@ title('Зависимость SFDR от количества бит ЦГ');
 xlabel('Количество бит ЦГ, n_g');
 ylabel('SFDR, дБн');
 set(gca,'Fontsize',20,'Fontname','Times New Roman');
-
-% Безопасное сохранение итогового графика 3 пункта
-if ~isfile('p3_sfdr_vs_bits_fir.fig')
-    savefig(fig_sfdr, 'p3_sfdr_vs_bits_fir.fig');
-else
-    disp('Файл p3_sfdr_vs_bits_fir.fig уже существует. Пропуск...');
-end
-
-if ~isfile('p3_sfdr_vs_bits_fir.tif')
-    print(fig_sfdr, 'p3_sfdr_vs_bits_fir', '-dtiff', '-r300');
-else
-    disp('Файл p3_sfdr_vs_bits_fir.tif уже существует. Пропуск...');
-end
 
 %% Пункт 4: Исследование квадратурных искажений
 current_nobg = 9; 
