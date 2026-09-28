@@ -1,0 +1,62 @@
+% !TeX root = ../main.tex
+\\
+\textbf{Тестовое воздействие симметричным ЛЧМ сигналом (КИХ-дециматор)}
+
+В завершающем этапе работы проверялась способность спроектированного КИХ-дециматора обрабатывать сложные широкополосные радиосигналы. В качестве тестового воздействия, как и в пункте 6, использовался симметричный линейно-частотно модулированный (ЛЧМ) сигнал с прямоугольной огибающей и базой $B = 512$.
+
+Поскольку в данном пункте скрипт генерирует каждый график в виде отдельного изображения, они сгруппированы для наглядного сравнения. На рисунке \ref{fig:p7_lfm_noisy} представлены результаты прохождения зашумленного ЛЧМ-сигнала через тракт с единым КИХ-фильтром. 
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Signal_LFM_on_IF.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Signal_LFM_video.png}
+    \end{minipage}
+    \vspace{0.5cm}
+    
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Spectrum_LFM_on_IF.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Spectrum_LFM_video.png}
+    \end{minipage}
+    \caption{Временные диаграммы и спектры ЛЧМ-сигнала до и после КИХ-дециматора (с учетом шума)}
+    \label{fig:p7_lfm_noisy}
+\end{figure}
+
+Для детальной оценки фазовой структуры и качества фильтрации спектра эксперимент был продублирован для нормированного ЛЧМ-сигнала без добавления аддитивного белого шума. Результаты представлены на рисунке \ref{fig:p7_lfm_clean}.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Add_Signal_LFM_on_IF.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Add_Signal_LFM_video.png}
+    \end{minipage}
+    \vspace{0.5cm}
+    
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Add_Spectrum_LFM_on_IF.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{P6_Add_Spectrum_LFM_video.png}
+    \end{minipage}
+    \caption{Структура нормированного ЛЧМ-видеосигнала в идеальных условиях (КИХ-дециматор)}
+    \label{fig:p7_lfm_clean}
+\end{figure}
+
+\textbf{Выводы по результатам моделирования:}
+Архитектура с единым КИХ-дециматором демонстрирует превосходные характеристики при обработке широкополосных сигналов. На временных диаграммах видеосигнала (рис. \ref{fig:p7_lfm_clean}, сверху справа) отчетливо видна идеальная симметрия ЛЧМ-импульса: мгновенная частота в I и Q каналах строго и без искажений переходит через ноль в центре временного окна. Прямоугольная огибающая сохраняет свою форму, паразитные выбросы (звон) на краях импульса минимальны.
+
+Особого внимания заслуживают спектрограммы. Спектр демодулированного ЛЧМ-сигнала (\texttt{Spectrum LFM video}) формирует практически идеальный прямоугольник. В отличие от каскада интеграторов и гребенчатых фильтров (CIC), единый КИХ-фильтр обеспечивает абсолютно плоскую АЧХ (неравномерность не более 0.1 дБ) во всей полосе пропускания. Это означает, что все спектральные компоненты ЛЧМ-сигнала передаются на выход без амплитудных искажений. Высокая крутизна скатов КИХ-фильтра также гарантирует полное подавление зеркальных частот и внеполосного шума, что критически важно для последующей согласованной фильтрации (сжатия) таких сигналов в радиолокационных системах.
