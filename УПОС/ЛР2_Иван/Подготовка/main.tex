@@ -1,0 +1,25 @@
+\documentclass[a4paper,14pt]{extarticle}
+
+% Подключаем преамбулу со всеми настройками
+\input{preamble}
+
+\begin{document}
+
+% Титульный лист
+\input{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Подключение разделов
+\input{sections/01_sec}
+\input{sections/02_sec}
+\input{sections/03_sec}
+\input{sections/04_sec}
+
+\end{document}
