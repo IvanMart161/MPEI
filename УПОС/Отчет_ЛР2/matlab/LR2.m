@@ -128,21 +128,153 @@ legend('Разомкнутая цепь', 'С нагрузкой 50 Ом', 'Фи
 % ЧАСТЬ 4: КОЭФФИЦИЕНТЫ ОТРАЖЕНИЯ АТТЕНЮАТОРОВ
 % =========================================================================
 % Данные приближены по графику 12. ЗАМЕНИТЕ НА СВОИ!
-P_att_3dB  = [-29, -29, -20, -27, -26, -25, -26, -25, -24]; 
-P_att_6dB  = [-35, -35, -33, -32, -41, -31, -30, -29, -30]; 
-P_att_10dB = [-42, -45, -45, -40, -42, -44, -44, -34, -42];
+% Массивы данных (начало таблицы: от 20 МГц до 460 МГц)
+% 1-й столбец: Частота (МГц)
+% 2-й столбец: Затухание 3 дБ
+% 3-й столбец: Затухание 6 дБ
+% 4-й столбец: Затухание 10 дБ
+% 5-й столбец: Затухание 20 дБ
+
+data_start = [
+    % Частота,  3 дБ,    6 дБ,    10 дБ,   20 дБ
+    20,        -17.14,   -22.58,  -30.42,  -44.34;
+    30,        -16.27,    NaN,     NaN,     NaN;
+    40,        -16.38,   -21.91,  -30.62,   -40.46;      % В 20 дБ стоит "? -40,46 ?" (записано как NaN)
+    50,        -16.60,    NaN,     NaN,     NaN;
+    60,        -16.44,    NaN,     NaN,     NaN;
+    70,        -16.93,    NaN,     NaN,     NaN;
+    80,        -17.30,    NaN,     NaN,     NaN;
+    90,        -16.94,    NaN,     NaN,     NaN;
+    100,       -16.38,   -22.78,  -31.09,   -40.83;      % В 20 дБ стоит "? -40,83 ?" (записано как NaN)
+    110,       -16.83,    NaN,     NaN,     NaN;
+    120,       -16.69,    NaN,     NaN,     NaN;
+    130,       -17.39,    NaN,     NaN,     NaN;
+    140,       -17.31,    NaN,     NaN,     NaN;
+    150,       -17.31,   -23.02,  -31.66,   -40.21;      % В 20 дБ стоит "? -40,21 ?" (записано как NaN)
+    160,        NaN,      NaN,     NaN,     NaN;
+    170,        NaN,      NaN,     NaN,     NaN;
+    180,        NaN,      NaN,     NaN,     NaN;
+    190,        NaN,      NaN,     NaN,     NaN;
+    200,       -16.93,   -23.41,  -32.24,  -44.01;
+    210,        NaN,      NaN,     NaN,     NaN;
+    220,        NaN,      NaN,     NaN,     NaN;
+    230,        NaN,      NaN,     NaN,     NaN;
+    240,        NaN,      NaN,     NaN,     NaN;
+    250,       -17.56,   -23.72,  -33.68,  -35.29;
+    260,        NaN,      NaN,     NaN,     NaN;
+    270,        NaN,      NaN,     NaN,     NaN;
+    280,        NaN,      NaN,     NaN,     NaN;
+    290,        NaN,      NaN,     NaN,     NaN;
+    300,       -17.54,   -23.16,  -33.03,  -43.90;
+    310,        NaN,      NaN,     NaN,     NaN;
+    320,        NaN,      NaN,     NaN,     NaN;
+    330,        NaN,      NaN,     NaN,     NaN;
+    340,        NaN,      NaN,     NaN,     NaN;
+    350,       -17.43,   -24.66,  -33.68,  -36.59;
+    360,        NaN,      NaN,     NaN,     NaN;
+    370,        NaN,      NaN,     NaN,     NaN;
+    380,        NaN,      NaN,     NaN,     NaN;
+    390,        NaN,      NaN,     NaN,     NaN;
+    400,       -17.74,   -24.18,  -33.76,  -44.20;
+    410,        NaN,      NaN,     NaN,     NaN;
+    420,        NaN,      NaN,     NaN,     NaN;
+    430,        NaN,      NaN,     NaN,     NaN;
+    440,        NaN,      NaN,     NaN,     NaN;
+    450,       -18.04,   -24.68,  -33.50,  -34.22;
+    460,        NaN,      NaN,     NaN,     NaN
+    470,        NaN,     NaN,     NaN,     NaN;
+    480,        NaN,     NaN,     NaN,     NaN;
+    490,        NaN,     NaN,     NaN,     NaN;
+    500,       -18.24,  -24.95,  -33.00,  -33.60;
+    510,        NaN,     NaN,     NaN,     NaN;
+    520,        NaN,     NaN,     NaN,     NaN;
+    530,        NaN,     NaN,     NaN,     NaN;
+    540,        NaN,     NaN,     NaN,     NaN;
+    550,       -18.70,  -25.30,  -33.19,  -33.29;
+    560,        NaN,     NaN,     NaN,     NaN;
+    570,        NaN,     NaN,     NaN,     NaN;
+    580,        NaN,     NaN,     NaN,     NaN;
+    590,        NaN,     NaN,     NaN,     NaN;
+    600,       -18.71,  -24.26,  -33.62,  -32.00;
+    610,        NaN,     NaN,     NaN,     NaN;
+    620,        NaN,     NaN,     NaN,     NaN;
+    630,        NaN,     NaN,     NaN,     NaN;
+    640,        NaN,     NaN,     NaN,     NaN;
+    650,       -18.67,  -25.06,  -32.24,  -33.33;
+    660,        NaN,     NaN,     NaN,     NaN;
+    670,        NaN,     NaN,     NaN,     NaN;
+    680,        NaN,     NaN,     NaN,     NaN;
+    690,        NaN,     NaN,     NaN,     NaN;
+    700,       -18.55,  -20.64,  -30.97,  -33.97;
+    710,        NaN,     NaN,     NaN,     NaN;
+    720,        NaN,     NaN,     NaN,     NaN;
+    730,        NaN,     NaN,     NaN,     NaN;
+    740,        NaN,     NaN,     NaN,     NaN;
+    750,       -17.25,  -23.64,  -31.82,  -35.82;
+    760,        NaN,     NaN,     NaN,     NaN;
+    770,        NaN,     NaN,     NaN,     NaN;
+    780,        NaN,     NaN,     NaN,     NaN;
+    790,        NaN,     NaN,     NaN,     NaN;
+    800,       -17.00,  -22.54,  -29.70,  -40.11; % Значение 40,17 (на фото 40,14 или 40,17, взято 17)
+    810,        NaN,     NaN,     NaN,     NaN;
+    820,        NaN,     NaN,     NaN,     NaN;
+    830,        NaN,     NaN,     NaN,     NaN;
+    840,        NaN,     NaN,     NaN,     NaN;
+    850,       -15.96,  -21.14,  -27.25,  -39.25;
+    860,        NaN,     NaN,     NaN,     NaN;
+    870,        NaN,     NaN,     NaN,     NaN;
+    880,        NaN,     NaN,     NaN,     NaN;
+    890,        NaN,     NaN,     NaN,     NaN;
+    900,       -14.96,  -19.62,  -26.05,  -31.91;
+    910,        NaN,     NaN,     NaN,     NaN;
+    920,        NaN,     NaN,     NaN,     NaN;
+    930,        NaN,     NaN,     NaN,     NaN;
+    940,        NaN,     NaN,     NaN,     NaN;
+    950,       -13.74,  -17.47,  -20.79,  -25.37; % Значение 25,37 (на фото нечетко, но похоже на 37)
+    960,        NaN,     NaN,     NaN,     NaN;
+    970,        NaN,     NaN,     NaN,     NaN;
+    980,        NaN,     NaN,     NaN,     NaN;
+    990,        NaN,     NaN,     NaN,     NaN;
+    1000,      -11.82,  -15.05,  -17.89,  -20.59
+];
+
+% Разделение на отдельные переменные
+freq_start = data_start(:, 1);
+
+P_att_3dB  = data_start(:, 2); 
+P_att_6dB  = data_start(:, 3); 
+P_att_10dB = data_start(:, 4);
+P_att_20dB = data_start(:, 5);
+
+% 3. Заполняем пропуски NaN линейной интерполяцией, чтобы линии не разрывались
+P_att_3dB  = fillmissing(P_att_3dB, 'linear');
+P_att_6dB  = fillmissing(P_att_6dB, 'linear');
+P_att_10dB = fillmissing(P_att_10dB, 'linear');
+P_att_20dB = fillmissing(P_att_20dB, 'linear');
+
+%Мощности необработанные 
+figure('Name', 'Мощности аттенюаторов', 'NumberTitle', 'off');
+plot(freq_start, P_att_3dB, 'b-.', 'LineWidth', 1.5); hold on;
+plot(freq_start, P_att_6dB, 'r--', 'LineWidth', 1.5);
+plot(freq_start, P_att_10dB, 'y-', 'LineWidth', 1.5);
+plot(freq_start, P_att_20dB, 'g-', 'LineWidth', 1.5);
+
+%Добавляем значения P_open!!!
+P_open = extend_Popen(P_open, 99);
 
 % Расчет коэффициентов отражения
 RL_att_3 = P_att_3dB - P_open;
 RL_att_6 = P_att_6dB - P_open;
 RL_att_10 = P_att_10dB - P_open;
+RL_att_20 = P_att_20dB - P_open;
 
 figure('Name', 'Отражение аттенюаторов', 'NumberTitle', 'off');
-plot(f_refl, RL_att_3, 'b-.', 'LineWidth', 1.5); hold on;
-plot(f_refl, RL_att_6, 'r--', 'LineWidth', 1.5);
-plot(f_refl, RL_att_10, 'y-', 'LineWidth', 1.5);
+plot(freq_start, RL_att_3, 'b-.', 'LineWidth', 1.5); hold on;
+plot(freq_start, RL_att_6, 'r--', 'LineWidth', 1.5);
+plot(freq_start, RL_att_10, 'y-', 'LineWidth', 1.5);
+plot(freq_start, RL_att_20, 'g-', 'LineWidth', 1.5);
 grid on;
 title('Коэффициент отражения для ненагруженных аттенюаторов'); 
 xlabel('Частота f, МГц');
 ylabel('Коэффициент отражения, дБ');
-legend('3 дБ', '6 дБ', '10 дБ', 'Location', 'best');
+legend('3 дБ', '6 дБ', '10 дБ','20 дБ', 'Location', 'best');
