@@ -1,0 +1,28 @@
+\documentclass[a4paper,14pt]{extarticle}
+
+% Подключаем преамбулу со всеми настройками
+\input{preamble}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric}
+
+
+\begin{document}
+
+% Титульный лист
+\input{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Подключение разделов
+\input{sections/01_sec}
+%\input{sections/02_sec}
+%\input{sections/03_sec}
+%\input{sections/04_sec}
+
+\end{document}
