@@ -1,0 +1,98 @@
+% !TeX root = ../main.tex
+\section{Программная реализация алгоритма поиска}
+
+Алгоритм двухмерного корреляционного поиска реализован на языке Python с использованием библиотек численного анализа \texttt{numpy} и визуализации \texttt{matplotlib}. Ниже приведены основные функциональные блоки программы.
+
+\subsection{Инициализация параметров и формирование опорного сигнала}
+На начальном этапе задаются параметры дискретизации, промежуточная частота и длительность интервала наблюдения, а также формируется опорная псевдослучайная последовательность дальномерного кода ГЛОНАСС L1OF, приведенная к частоте дискретизации $F_d = 33\text{ МГц}$.
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+Fd = 33e6
+f0 = 8e6
+T = 1e-3
+N = int(T * Fd)
+
+k = np.arange(N)
+t = k / Fd
+
+code_str = (
+    "1111111000001111011111000101110011001000001001010011101101000"
+    "111100111110011011000101010010001110001101101010111000100110001000"
+    "100000000100001000110000100111001010101100001101111010011011100100"
+    "010100001010110100111111011001001001011011111100100110101001100110"
+    "000000110001100101000110100101111111010001011000111010110010110011"
+    "110001111101110100000110101101101110110000010110101111101010101000"
+    "000101001010111100101110111000000111111010010011110101110101000111"
+    "001000011001110000101111011011001101000011101111000011"
+)
+
+dk_symbols = np.array([1.0 if b == '0' else -1.0 for b in code_str])
+chip_indices = np.clip(np.floor(k * 511.0 / N).astype(int), 0, 510)
+g_ref = dk_symbols[chip_indices]
+\end{lstlisting}
+
+\subsection{Загрузка выборки и задание сетки поиска}
+Входная выборка считывается из файла варианта. Задается область поиска по задержке на 1022 отсчета и по частоте Доплера на 9 частотных сдвигов.
+
+\begin{lstlisting}[language=Python]
+y = np.loadtxt("Yvar8.txt")
+if len(y) > N:
+    y = y[:N]
+
+num_tau = 1022
+tau_ms = np.linspace(0.0, 1.0, num_tau, endpoint=False)
+f_dop = np.linspace(-2000.0, 2000.0, 9)
+\end{lstlisting}
+
+\subsection{Двухмерный коррелятор на основе БПФ}
+Для ускорения вычислений корреляция по задержке выполняется в частотной области через быстрое преобразование Фурье. Сигнал переносится на нулевую частоту с учетом проверяемого доплеровского сдвига, после чего перемножается со спектром опорной ПСП и восстанавливается обратным БПФ. Отсчеты огибающей $X^2 = I^2 + Q^2$ прореживаются до требуемого разрешения сетки задержки.
+
+\begin{lstlisting}[language=Python]
+G_conj = np.conj(np.fft.fft(g_ref))
+X2_matrix = np.zeros((len(f_dop), num_tau))
+sample_tau_indices = np.round(np.linspace(0, N - 1, num_tau, endpoint=False)).astype(int)
+
+for i, fd in enumerate(f_dop):
+    s_demod = y * np.exp(-1j * 2.0 * np.pi * (f0 + fd) * t)
+    corr = np.fft.ifft(np.fft.fft(s_demod) * G_conj)
+    X2_matrix[i, :] = np.abs(corr[sample_tau_indices])**2
+\end{lstlisting}
+
+\subsection{Оценка параметров сигнала и порога обнаружения}
+По сформированному полю отклика находится глобальный максимум и соответствующие ему координаты частоты и задержки. По оценке мощности шумового фона рассчитывается порог обнаружения по критерию Неймана--Пирсона.
+
+\begin{lstlisting}[language=Python]
+max_val = np.max(X2_matrix)
+fd_idx, tau_idx = np.unravel_index(np.argmax(X2_matrix), X2_matrix.shape)
+est_fd = f_dop[fd_idx]
+est_tau = tau_ms[tau_idx]
+
+noise_var = np.median(X2_matrix) / np.log(2)
+P_fa = 1e-4
+h_threshold = -noise_var * np.log(P_fa)
+
+print(f"Max X2: {max_val}")
+print(f"Threshold: {h_threshold}")
+print(f"Estimated fd: {est_fd}")
+print(f"Estimated tau: {est_tau}")
+\end{lstlisting}
+
+\subsection{Построение трехмерной поверхности отклика}
+Финальный блок выполняет построение поверхности $X^2(\tau_{\text{з}}, f_{\text{д}})$ и сохранение графического файла для отчета.
+
+\begin{lstlisting}[language=Python]
+TAU, FD = np.meshgrid(tau_ms, f_dop)
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+surf = ax.plot_surface(TAU, FD, X2_matrix, cmap='coolwarm', edgecolor='none', alpha=0.9)
+ax.set_xlabel(r'$\tau_z$, ms')
+ax.set_ylabel(r'$f_d$, Hz')
+ax.set_zlabel(r'$X^2$')
+ax.view_init(elev=35, azim=-125)
+fig.colorbar(surf, shrink=0.5, aspect=10)
+plt.savefig("search_surface_var8.png", dpi=300)
+plt.show()
+\end{lstlisting}
