@@ -246,28 +246,32 @@ P_att_6dB  = data_start(:, 3);
 P_att_10dB = data_start(:, 4);
 P_att_20dB = data_start(:, 5);
 
-% 3. Заполняем пропуски NaN линейной интерполяцией, чтобы линии не разрывались
+% Заполняем пропуски NaN линейной интерполяцией
 P_att_3dB  = fillmissing(P_att_3dB, 'linear');
 P_att_6dB  = fillmissing(P_att_6dB, 'linear');
 P_att_10dB = fillmissing(P_att_10dB, 'linear');
 P_att_20dB = fillmissing(P_att_20dB, 'linear');
 
-%Мощности необработанные 
-figure('Name', 'Мощности аттенюаторов', 'NumberTitle', 'off');
-plot(freq_start, P_att_3dB, 'b-.', 'LineWidth', 1.5); hold on;
-plot(freq_start, P_att_6dB, 'r--', 'LineWidth', 1.5);
-plot(freq_start, P_att_10dB, 'y-', 'LineWidth', 1.5);
-plot(freq_start, P_att_20dB, 'g-', 'LineWidth', 1.5);
+% --- ИСПРАВЛЕНИЕ 1: ИНТЕРПОЛЯЦИЯ P_open ---
+% Восстанавливаем оригинальную ось частот для P_open (50 точек)
+freq_open = 10:20:990; 
 
-%Добавляем значения P_open!!!
-P_open = extend_Popen(P_open, 99);
+% Интерполируем P_open на сетку частот аттенюаторов (freq_start)
+% 'linear' - линейная интерполяция, 'extrap' - экстраполяция крайних точек
+P_open_interp = interp1(freq_open, P_open, freq_start, 'linear', 'extrap');
 
-% Расчет коэффициентов отражения
-RL_att_3 = P_att_3dB - P_open;
-RL_att_6 = P_att_6dB - P_open;
-RL_att_10 = P_att_10dB - P_open;
-RL_att_20 = P_att_20dB - P_open;
+% --- ИСПРАВЛЕНИЕ 2: УЧЕТ МОЩНОСТИ ГЕНЕРАТОРА ---
+P_gen_open = 0;  % Мощность при калибровке P_open (если была 0 дБм)
+P_gen_10   = 10; % Поданная мощность для 3, 6, 10 дБ
+P_gen_20   = 20; % Поданная мощность для 20 дБ
 
+% Расчет истинных коэффициентов отражения по формуле RL = P_отр_норм - P_падающ_норм
+RL_att_3  = (P_att_3dB  - P_gen_10) - (P_open_interp - P_gen_open);
+RL_att_6  = (P_att_6dB  - P_gen_10) - (P_open_interp - P_gen_open);
+RL_att_10 = (P_att_10dB - P_gen_10) - (P_open_interp - P_gen_open);
+RL_att_20 = (P_att_20dB - P_gen_20) - (P_open_interp - P_gen_open);
+
+% Построение итогового графика
 figure('Name', 'Отражение аттенюаторов', 'NumberTitle', 'off');
 plot(freq_start, RL_att_3, 'b-.', 'LineWidth', 1.5); hold on;
 plot(freq_start, RL_att_6, 'r--', 'LineWidth', 1.5);
