@@ -3,54 +3,10 @@
 
 Структурная схема разработанного тракта пространственно-временной обработки сигнала представлена на рисунке 1.
 
-\begin{figure}[h!]
+
+\begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        auto,
-        block/.style={
-            rectangle, 
-            draw=black, 
-            thick, 
-            fill=blue!5, 
-            text width=4em, 
-            align=center, 
-            minimum height=3em
-        },
-        mult/.style={
-            circle, 
-            draw=black, 
-            thick, 
-            fill=blue!5, 
-            minimum size=2em, 
-            inner sep=0pt
-        },
-        line/.style={
-            draw, 
-            thick, 
-            -Latex
-        }
-    ]
-
-    % Определение узлов (блоков схемы)
-    \node[coordinate] (input) {};
-    \node[block, right=1.5cm of input] (adc) {АЦП};
-    \node[mult, right=2cm of adc] (mixer) {$\times$};
-    \node[block, below=1.5cm of mixer] (nco) {ЦГ};
-    \node[block, right=2cm of mixer] (lpf) {ФНЧ};
-    \node[block, right=1.5cm of lpf] (decim) {$\downarrow D$};
-    \node[block, right=1.5cm of decim] (mf) {СФ};
-    \node[coordinate, right=1.5cm of mf] (output) {};
-
-    % Соединительные линии и подписи
-    \draw[line] (input) -- node[above] {$x(t)$} (adc);
-    \draw[line] (adc) -- node[above] {$x_q[n]$} (mixer);
-    \draw[line] (nco) -- node[right] {$s_{NCO}[n]$} (mixer);
-    \draw[line] (mixer) -- node[above] {$y_{cdm}[n]$} (lpf);
-    \draw[line] (lpf) -- node[above] {$y_f[n]$} (decim);
-    \draw[line] (decim) -- node[above] {$y_{dec}[m]$} (mf);
-    \draw[line] (mf) -- node[above] {$y_{sf}[m]$} (output);
-
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{sh.png}
     \caption{Структурная схема тракта обработки радиосигнала}
     \label{fig:block_diagram}
 \end{figure}
@@ -60,6 +16,35 @@
     \item \textbf{АЦП} --- аналого-цифровой преобразователь, осуществляющий субдискретизацию входного радиосигнала $x(t)$.
     \item \textbf{Смеситель ($\times$) и ЦГ} --- блок цифровой демодуляции (ЦДМ), где оцифрованный сигнал умножается на опорное колебание цифрового гетеродина для переноса на нулевую частоту.
     \item \textbf{ФНЧ} --- цифровой фильтр нижних частот, отсекающий побочные высокочастотные продукты преобразования.
-    \item \textbf{$\downarrow D$} --- дециматор, понижающий частоту дискретизации.
     \item \textbf{СФ} --- блок согласованной фильтрации, вычисляющий сегментированную быструю свертку алгоритмом перекрытия со сложением.
 \end{itemize}
+
+% --- ФРАГМЕНТ ДЛЯ ВСТАВКИ ТАБЛИЦ ---
+Параметры тракта обработки и зондирующего ЛЧМ-сигнала для заданного варианта сведены в таблицы \ref{tab:path_params} и \ref{tab:signal_params}.
+
+\begin{table}[H]
+\centering
+\caption{Параметры тракта обработки}
+\label{tab:path_params}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Наименование параметра} & \textbf{Значение} \\ \hline
+Промежуточная частота входного сигнала, $f_c$ & 170 МГц \\ \hline
+Количество бит АЦП, $n_a$ & 9 бит \\ \hline
+Частота дискретизации АЦП, $f_s$ & 140 МГц \\ \hline
+Количество бит ЦГ, $n_g$ & 9 бит \\ \hline
+Центральная частота ЦГ, $f_G$ & 170 МГц \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Параметры зондирующего ЛЧМ-радиосигнала}
+\label{tab:signal_params}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Наименование параметра} & \textbf{Значение} \\ \hline
+База сигнала, $B$ & 512 \\ \hline
+Полоса сигнала, $\Delta f$ & 20 МГц \\ \hline
+\end{tabular}
+\end{table}
