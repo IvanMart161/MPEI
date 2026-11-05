@@ -114,19 +114,19 @@ plt.close(fig1)
 # -----------------------------------------------------------------------------
 # График 2: Эволюция векторных диаграмм и годографа (pic_env_evolution.png)
 # -----------------------------------------------------------------------------
-fig2, axs2 = plt.subplots(2, 2, figsize=(12, 10))
-sig_vals = [0.1, 0.2, 0.3, 0.5]
+fig2, axs2 = plt.subplots(2, 3, figsize=(16, 9.5))
+sig_vals = [0.1, 0.2, 0.3, 0.4, 0.5]
 
 # Интервал [0.15; 0.35] мс для выразительной петли
 m_evo = (t_dip >= 0.15e-3) & (t_dip <= 0.35e-3)
 uc_noise_seg = Uc_noise[m_evo]
 us_noise_seg = Us_noise[m_evo]
 
-# Фиксируем контрольную точку внутри петли (например, отсчет 180)
+# Фиксируем контрольную точку внутри петли
 pt = 180
 
 for idx, s_amp in enumerate(sig_vals):
-    ax = axs2[idx // 2, idx % 2]
+    ax = axs2[idx // 3, idx % 3]
     
     # Результирующий годограф смеси: косинусная компонента смещена на s_amp
     uc_mix = uc_noise_seg + s_amp
@@ -168,7 +168,10 @@ for idx, s_amp in enumerate(sig_vals):
         ax.plot([], [], color='black', lw=1.2, ls='--', label=r'Смесь $\dot{U}_{\Sigma}$')
         ax.legend(loc='upper right', fontsize=8, framealpha=0.9)
 
-plt.subplots_adjust(top=0.94, bottom=0.07, hspace=0.26, wspace=0.22)
+# Скрываем неиспользуемый 6-й subplot (правый нижний угол)
+axs2[1, 2].set_visible(False)
+
+plt.subplots_adjust(top=0.94, bottom=0.07, hspace=0.28, wspace=0.24)
 fig2.savefig(os.path.join(output_dir, "pic_env_evolution.png"), dpi=200)
 plt.close(fig2)
 # =============================================================================
