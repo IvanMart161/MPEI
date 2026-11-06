@@ -1,21 +1,34 @@
-\documentclass[a4paper,10pt,twocolumn]{article}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
 
 \input{preamble.tex}
 
 \begin{document}
 
-\twocolumn[{%
-  \begin{@twocolumnfalse}
-    \input{titlepage.tex}
-    \vspace{1.5em}
-  \end{@twocolumnfalse}
-}]
+\title{Сквозное аппаратно-программное моделирование тракта параллельного поиска сигналов GPS L1 с использованием Verilator}
+
+\author{\IEEEauthorblockN{И.\,А.~Мартыненко}
+\IEEEauthorblockA{\textit{Кафедра радиотехнических систем} \\
+\textit{Национальный исследовательский университет «МЭИ»}\\
+Москва, Россия \\
+ivan.martynenko@proton.me, ORCID: 0009-0005-5176-0151}
+}
+
+\maketitle
+
+\begin{abstract}
+Разработка бортовых навигационных приемников для малых космических аппаратов (МКА) формата CubeSat требует применения алгоритмов параллельного поиска (PCPS) для преодоления высокой динамики доплеровского сдвига. Однако традиционное событийно-управляемое моделирование таких трактов сталкивается с вычислительным барьером при обработке длинных выборок сигнала. В данной работе предложена методология сквозной верификации тракта первичного поиска GPS L1, объединяющая синтезируемую RTL-модель на SystemVerilog и программное окружение на C++ в единый исполняемый файл с помощью компилятора Verilator. Использование статического планирования графа схемы и нативной интеграции C++ позволило реализовать адаптивный детектор Неймана--Пирсона с оценкой шума по выборке без накладных расходов на межъязыковое взаимодействие. Экспериментальные результаты на модели сигнала с отношением сигнал/шум $-20$~дБ подтвердили работоспособность комплекса: полное сканирование пространства «задержка--Доплер» в диапазоне $\pm50$~кГц (201 частотный срез) выполнено за один прогон симуляции.
+\end{abstract}
+
+\begin{IEEEkeywords}
+GPS L1, первичный поиск, PCPS, критерий Неймана--Пирсона, Verilator, CubeSat, SystemVerilog, HW/SW Co-design, ASIC.
+\end{IEEEkeywords}
 
 \input{sections/intro.tex}
 \input{sections/sec1_arch.tex}
 \input{sections/sec2_verilator.tex}
-\input{sections/sec3_rtl.tex}
 \input{sections/sec4_results.tex}
+\input{sections/sec4_perfomance.tex}
 \input{sections/conclusion.tex}
 
 \input{biblio.tex}
