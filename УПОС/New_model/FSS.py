@@ -287,7 +287,7 @@ noise_fss = noise_fss * (sigma_u / np.std(noise_fss))
 # 3. Подготовка данных для графиков
 # -------------------------------------------------------------
 # 1) АЧХ ФСС
-f_ach = np.linspace(9.0e6, 11.5e6, 1000)
+f_ach = np.linspace(8.5e6, 11.5e6, 1000)
 x_ach = 2.0 * (f_ach - f0) / df_fss
 ach_curve = 1.0 / np.sqrt(1.0 + x_ach**6)
 
@@ -336,7 +336,7 @@ fig, axs = plt.subplots(2, 3, figsize=(14, 7.5))
 axs[0, 0].plot(f_ach / 1e6, ach_curve, color='#0011dd', lw=1.5)
 axs[0, 0].set_title("АЧХ трехзвенного ФСС", fontsize=9)
 axs[0, 0].set_xlabel("f, МГц", fontsize=8)
-axs[0, 0].set_xlim(9.0, 11.5)
+axs[0, 0].set_xlim(8.5, 11.5)
 axs[0, 0].set_ylim(0, 1.05)
 axs[0, 0].grid(True, ls='--', color='lightgray')
 
