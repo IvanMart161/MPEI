@@ -1,0 +1,72 @@
+% !TeX root = ../main.tex
+\section{Программная реализация моделирования}
+Расчет аналитических зависимостей и дискретное моделирование системы ЧАП выполнены на языке Python с использованием библиотек \texttt{numpy} и \texttt{matplotlib}.
+
+\subsection{Функции аналитического расчета установившегося режима}
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+alpha = 1.0
+T = 0.01
+f0 = 1602e6
+omega0 = 2.0 * np.pi * f0
+c = 3e8
+k_dop = omega0 / c
+
+def calc_N0_tilde(q_lin):
+    return (2.0 / (q_lin * T**2)) * (1.0 + 1.0 / (2.0 * q_lin * T))
+
+def calc_S_xi(sigma_a):
+    return 2.0 * (sigma_a**2) * alpha * (k_dop**2)
+
+def steady_state_params(q_dBHz, sigma_a):
+    q_lin = 10.0**(0.1 * q_dBHz)
+    N0_t = calc_N0_tilde(q_lin)
+    S_xi = calc_S_xi(sigma_a)
+
+    D11 = (alpha * N0_t / 2.0) * (
+        np.sqrt(1.0 + 2.0 * np.sqrt(S_xi / (alpha**2 * N0_t))) - 1.0
+    )
+    sigma_omega = np.sqrt(D11)
+
+    K1 = 2.0 * D11 / N0_t
+    K2 = (K1**2) / 2.0
+
+    num = (K1**2) * (alpha + K1) + (alpha * K1 + K2)**2
+    den = 4.0 * (alpha + K1) * (alpha * K1 + K2)
+    dF_fll = num / den
+
+    return sigma_omega, dF_fll, D11
+\end{lstlisting}
+
+\subsection{Цикл дискретного фильтра Калмана}
+\begin{lstlisting}[language=Python]
+F = np.array([[1.0, T], [0.0, 1.0 - alpha * T]])
+G = np.array([[0.0], [alpha * T]])
+H = np.array([[1.0, 0.0]])
+Q_d = (G @ G.T) * (sigma_xi_d**2)
+R_d = sigma_n_d**2
+
+x_true = np.array([100.0, 100.0])
+x_est = np.array([0.0, 0.0])
+D = np.array([[34.0**2, 0.0], [0.0, 340.0**2]])
+
+for k in range(N_steps):
+    omega_true_hist[k] = x_true[0]
+    omega_est_hist[k] = x_est[0]
+    D11_hist[k] = D[0, 0]
+
+    x_true = F @ x_true + np.array([0.0, alpha * T * xi_noise[k]])
+    y_meas = x_true[0] + n_noise[k]
+
+    x_pred = F @ x_est
+    D_pred = F @ D @ F.T + Q_d
+
+    S_inn = D_pred[0, 0] + R_d
+    K = D_pred[:, 0] / S_inn
+
+    innov = y_meas - x_pred[0]
+    x_est = x_pred + K * innov
+    D = (np.eye(2) - np.outer(K, H)) @ D_pred
+\end{lstlisting}

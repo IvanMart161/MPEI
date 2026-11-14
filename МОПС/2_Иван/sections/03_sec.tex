@@ -1,0 +1,44 @@
+% !TeX root = ../main.tex
+\section{Аналитический расчет и уравнения оптимальной фильтрации}
+
+\subsection{Установившийся режим работы ЧАП}
+В стационарном режиме ($t \to \infty$, $\frac{d D_x}{dt} = 0$) установившаяся дисперсия ошибки фильтрации доплеровской частоты $D_{11}$ и коэффициенты сглаживающего фильтра $K_1, K_2$ определяются выражениями
+\begin{align}
+D_{11} &= \frac{\alpha \tilde{N}_0}{2} \left(\sqrt{1 + 2\sqrt{\frac{S_\xi}{\alpha^2 \tilde{N}_0}}} - 1\right), \qquad \sigma_\Omega = \sqrt{D_{11}}, \\
+K_1 &= \frac{2 D_{11}}{\tilde{N}_0} = \alpha \left(\sqrt{1 + 2\sqrt{\frac{S_\xi}{\alpha^2 \tilde{N}_0}}} - 1\right), \qquad K_2 = \frac{K_1^2}{2}.
+\end{align}
+
+Передаточные функции разомкнутой и замкнутой следящей системы по оценке частоты имеют вид
+\begin{align}
+K_{\text{Ф}}(p) &= \frac{1}{p}\left(K_1 + \frac{K_2}{p + \alpha}\right), \\
+K_{y\Omega}(p) &= \frac{K_{\text{Ф}}(p)}{1 + K_{\text{Ф}}(p)} = \frac{K_1 p + \alpha K_1 + K_2}{p^2 + (\alpha + K_1)p + (\alpha K_1 + K_2)}.
+\end{align}
+
+\begin{equation}
+\Delta F_{\text{ЧАП}} = \frac{1}{2\pi} \int_0^\infty |K_{y\Omega}(j\omega)|^2 \, d\omega = \frac{K_1^2(\alpha + K_1) + (\alpha K_1 + K_2)^2}{4(\alpha + K_1)(\alpha K_1 + K_2)}.
+\end{equation}
+
+\subsection{Уравнения оптимального дискретного фильтра Калмана}
+Введем вектор состояния $x_k = \begin{bmatrix} \Omega_k & v_k \end{bmatrix}^T$, вектор входа шума $G = \begin{bmatrix} 0 \\ \alpha T \end{bmatrix}$, а также переходную матрицу $F$ и матрицу $H$
+\begin{equation}
+F = \begin{bmatrix} 1 & T \\ 0 & 1 - \alpha T \end{bmatrix}, \qquad H = \begin{bmatrix} 1 & 0 \end{bmatrix}.
+\end{equation}
+
+На этапе экстраполяции на $k$-м шаге вычисляются априорные оценки вектора состояния и ковариационной матрицы ошибок
+\begin{align}
+\hat{\Omega}_{k|k-1} &= \hat{\Omega}_{k-1} + \hat{v}_{k-1} T, \\
+\hat{v}_{k|k-1} &= \hat{v}_{k-1}(1 - \alpha T), \\
+D_{k|k-1} &= F D_{k-1} F^T + G \sigma_\xi^2 G^T.
+\end{align}
+
+Далее определяются компоненты вектора коэффициентов усиления Калмана $K_k = \begin{bmatrix} K_{1,k} & K_{2,k} \end{bmatrix}^T$ по формулам
+\begin{equation}
+K_{1,k} = \frac{D_{11, k|k-1}}{D_{11, k|k-1} + \sigma_n^2}, \qquad K_{2,k} = \frac{D_{12, k|k-1}}{D_{11, k|k-1} + \sigma_n^2}.
+\end{equation}
+
+На этапе коррекции формируются апостериорные оценки состояния и обновляется ковариационная матрица ошибок фильтрации
+\begin{align}
+\hat{\Omega}_k &= \hat{\Omega}_{k|k-1} + K_{1,k} (\tilde{y}_k - \hat{\Omega}_{k|k-1}), \\
+\hat{v}_k &= \hat{v}_{k|k-1} + K_{2,k} (\tilde{y}_k - \hat{\Omega}_{k|k-1}), \\
+D_k &= (I - K_k H) D_{k|k-1}.
+\end{align}
