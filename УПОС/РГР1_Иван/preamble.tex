@@ -1,20 +1,23 @@
+% 1. Поиск в PDF и кодировки (cmap строго перед fontenc!)
+\usepackage{cmap}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[russian]{babel}
+\usepackage{cm-super} % векторные Type 1 шрифты для печати без пропусков
 
-% --- Поля по ГОСТ 7.32 ---
+% 2. Поля по ГОСТ 7.32
 \usepackage[left=30mm, right=15mm, top=20mm, bottom=20mm]{geometry}
 
-% --- Межстрочный интервал и абзацы ---
+% 3. Межстрочный интервал и абзацы
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{indentfirst}
 \setlength{\parindent}{1.25cm}
 
-% --- Математика ---
+% 4. Математика
 \usepackage{amsmath, amsfonts, amssymb}
 
-% --- Таблицы и графика ---
+% 5. Таблицы и графика
 \usepackage{graphicx}
 \graphicspath{{exports_fig/}}
 \usepackage{booktabs}
@@ -22,23 +25,20 @@
 \usepackage{float}
 \usepackage{multirow}
 
-% --- Подписи к рисункам и таблицам ---
+% 6. Подписи к рисункам и таблицам
 \usepackage{caption}
 \DeclareCaptionLabelSeparator{endash}{\space---\space}
 \captionsetup[figure]{labelsep=endash, justification=centering, font=small}
 \captionsetup[table]{labelsep=endash, justification=raggedright, singlelinecheck=false, font=small}
 
-% --- Заголовки разделов по ГОСТ 7.32 ---
+% 7. Заголовки разделов (titlesec)
 \usepackage{titlesec}
-
-% Раздел первого уровня (14pt/large, красная строка)
 \titleformat{\section}[hang]
     {\raggedright\bfseries\large}
     {\hspace*{\parindent}\thesection}
     {0.5em}
     {}
 
-% Подраздел (14pt/normalsize, красная строка, без наползания второй строки на номер)
 \titleformat{\subsection}[hang]
     {\raggedright\bfseries\normalsize}
     {\hspace*{\parindent}\thesubsection}
@@ -48,8 +48,8 @@
 \titlespacing*{\section}{0pt}{14pt plus 2pt minus 2pt}{8pt plus 2pt minus 2pt}
 \titlespacing*{\subsection}{0pt}{10pt plus 2pt minus 2pt}{6pt plus 2pt minus 2pt}
 
-% --- Оглавление (точки и ссылки) ---
-\usepackage{tocloft}
+% 8. Оглавление (опция [titles] устраняет конфликт с titlesec)
+\usepackage[titles]{tocloft}
 \renewcommand{\contentsname}{СОДЕРЖАНИЕ}
 \renewcommand{\cfttoctitlefont}{\hfill\bfseries\normalsize}
 \renewcommand{\cftaftertoctitle}{\hfill\null\smallskip}
@@ -58,7 +58,7 @@
 \renewcommand{\cftsecpagefont}{\normalfont}
 \setlength{\cftbeforesecskip}{0.3em}
 
-% --- Подсветка кода (listings) ---
+% 9. Подсветка кода (listings)
 \usepackage{xcolor}
 \usepackage{listings}
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -84,7 +84,7 @@
 }
 \lstset{style=gostcode}
 
-% --- Ссылки ---
+% 10. Ссылки (грузятся почти в самом конце)
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,

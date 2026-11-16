@@ -21,15 +21,35 @@ P_rev_S = [-68, -60, -58, -49, -48.65, -48.33, -47.9, -47.86, -46.9, -46.7, -45,
 S21 = P1_amp_S - P2_cal_S;
 S12 = P_rev_S - P2_cal_S;
 
-figure('Name', 'АЧХ S_{21}');
-plot(freq, S21, 'LineWidth', 1.5);
-grid on; title('Коэффициент усиления (S_{21})');
-xlabel('Частота, МГц'); ylabel('S_{21}, дБ');
+% Плотная сетка частот для плавной аппроксимации
+freq_dense = linspace(min(freq), max(freq), 500);
 
-figure('Name', 'Обратное прохождение S_{12}');
-plot(freq, S12, 'LineWidth', 1.5);
-grid on; title('Развязка (S_{12}');
+% Полиномиальная аппроксимация 4-й степени (сглаживает выбросы измерений)
+p_S21 = polyfit(freq, S21, 4);
+S21_fit = polyval(p_S21, freq_dense);
+
+p_S12 = polyfit(freq, S12, 4);
+S12_fit = polyval(p_S12, freq_dense);
+
+% --- График S21 ---
+figure('Name', 'АЧХ S_{21}', 'Color', 'w');
+plot(freq, S21, 'bo--', 'LineWidth', 1.2, 'MarkerFaceColor', 'b', 'MarkerSize', 5, ...
+    'DisplayName', 'Эксперимент'); hold on; grid on;
+plot(freq_dense, S21_fit, 'r-', 'LineWidth', 2.0, ...
+    'DisplayName', 'Аппроксимация (полином 4-й ст.)');
+title('Коэффициент усиления (S_{21})');
+xlabel('Частота, МГц'); ylabel('S_{21}, дБ');
+legend('Location', 'northeast');
+
+% --- График S12 ---
+figure('Name', 'Обратное прохождение S_{12}', 'Color', 'w');
+plot(freq, S12, 'bo--', 'LineWidth', 1.2, 'MarkerFaceColor', 'b', 'MarkerSize', 5, ...
+    'DisplayName', 'Эксперимент'); hold on; grid on;
+plot(freq_dense, S12_fit, 'r-', 'LineWidth', 2.0, ...
+    'DisplayName', 'Аппроксимация (полином 4-й ст.)');
+title('Развязка (S_{12})');
 xlabel('Частота, МГц'); ylabel('S_{12}, дБ');
+legend('Location', 'southeast');
 
 
 % %% 2. Расчет коэффициента шума (NF)

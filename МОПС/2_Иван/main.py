@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ==========================================
-# Исходные константы (Лекция 9, слайд 10)
-# ==========================================
 alpha = 1.0                     # с^-1
 T = 0.01                        # 10 мс
 f0 = 1602e6                     # Гц
@@ -34,7 +31,6 @@ def steady_state_params(q_dBHz, sigma_a):
     K1 = 2.0 * D11 / N0_t
     K2 = (K1**2) / 2.0
 
-    # Эквивалентная шумовая полоса ЧАП (аналитический интеграл)
     num = (K1**2) * (alpha + K1) + (alpha * K1 + K2)**2
     den = 4.0 * (alpha + K1) * (alpha * K1 + K2)
     dF_fll = num / den
@@ -42,18 +38,12 @@ def steady_state_params(q_dBHz, sigma_a):
     return sigma_omega, dF_fll, D11
 
 
-# ==========================================
-# Пункты 1 и 2: Аналитические зависимости
-# ==========================================
 q_grid_dBHz = np.linspace(14.0, 50.0, 200)
 sigma_omega_q, dF_q, _ = steady_state_params(q_grid_dBHz, sigma_a=10.0)
 
 sigma_a_grid = np.linspace(1.0, 30.0, 200)
 sigma_omega_a, dF_a, _ = steady_state_params(q_dBHz=30.0, sigma_a=sigma_a_grid)
 
-# ==========================================
-# Пункты 3–8: Дискретное моделирование (Калман)
-# ==========================================
 q_sim_dBHz = 30.0
 sigma_a_sim = 10.0
 q_sim_lin = 10.0**(0.1 * q_sim_dBHz)
@@ -118,11 +108,7 @@ for k in range(N_steps):
 
 err_omega = omega_est_hist - omega_true_hist
 
-# ==========================================
-# Сохранение отдельных фигур: 1.png .. 5.png
-# ==========================================
 
-# 1.png: Истинная доплеровская частота (0..1000 с)
 fig1, ax1 = plt.subplots(figsize=(9, 4.5))
 ax1.plot(t_arr, omega_true_hist, linewidth=0.8)
 ax1.set_title(r'Истинная доплеровская частота $\Omega_k(t_k)$, $t \in [0, 1000]\text{ с}$', fontsize=11)
@@ -132,7 +118,6 @@ ax1.grid(True)
 fig1.tight_layout()
 fig1.savefig("1.png", dpi=300)
 
-# 2.png: СКО фильтрации (0..1 с)
 idx_1s = int(1.0 / T)
 fig2, ax2 = plt.subplots(figsize=(9, 4.5))
 ax2.plot(t_arr[:idx_1s], np.sqrt(D11_hist[:idx_1s]), linewidth=2, color='tab:orange')
@@ -143,7 +128,6 @@ ax2.grid(True)
 fig2.tight_layout()
 fig2.savefig("2.png", dpi=300)
 
-# 3.png: Мгновенная ошибка фильтрации (0..10 с)
 idx_10s = int(10.0 / T)
 fig3, ax3 = plt.subplots(figsize=(9, 4.5))
 ax3.plot(t_arr[:idx_10s], err_omega[:idx_10s], linewidth=1.0, color='tab:green')
@@ -154,7 +138,6 @@ ax3.grid(True)
 fig3.tight_layout()
 fig3.savefig("3.png", dpi=300)
 
-# 4.png: Зависимости от q_{c/n0} (2 графика)
 fig4, axes4 = plt.subplots(1, 2, figsize=(12, 4.8))
 axes4[0].plot(q_grid_dBHz, sigma_omega_q, linewidth=2)
 axes4[0].set_title(r'СКО фильтрации частоты $\sigma_\Omega(q_{c/n_0})$ при $\sigma_a = 10\text{ м/с}^2$', fontsize=10)
@@ -170,7 +153,6 @@ axes4[1].grid(True)
 fig4.tight_layout(pad=2.0)
 fig4.savefig("4.png", dpi=300)
 
-# 5.png: Зависимости от sigma_a (2 графика)
 fig5, axes5 = plt.subplots(1, 2, figsize=(12, 4.8))
 axes5[0].plot(sigma_a_grid, sigma_omega_a, linewidth=2, color='tab:green')
 axes5[0].set_title(r'СКО фильтрации частоты $\sigma_\Omega(\sigma_a)$ при $q_{c/n_0} = 30\text{ дБГц}$', fontsize=10)
@@ -186,9 +168,6 @@ axes5[1].grid(True)
 fig5.tight_layout(pad=2.0)
 fig5.savefig("5.png", dpi=300)
 
-# ==========================================
-# Пункт 8: Сравнение в установившемся режиме
-# ==========================================
 steady_start_idx = int(5.0 / T)
 D11_discrete_steady = D11_hist[-1]
 _, _, D11_analytic_steady = steady_state_params(q_sim_dBHz, sigma_a_sim)
